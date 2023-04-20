@@ -1016,55 +1016,70 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     // CS+SS+N -> FN Keys
     // F11 -> CS+SS+Q, F12 -> CS+SS+W
     // TO DO: Add delay after special key so keys as vol up vol down or toggles like F8 doesn't get re-pressed too fast.
-    if ((!bitRead(ZXKeyb::ZXcols[0],0)) && (!bitRead(ZXKeyb::ZXcols[7],1))) {
+    if ((!bitRead(ZXKeyb::ZXcols[0],0)) && (!bitRead(ZXKeyb::ZXcols[7],1)) && (ZXKeyb::PrevFkeyOSD == 0)) {
         if (!bitRead(ZXKeyb::ZXcols[3],0)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             OSD::do_OSD(fabgl::VK_F1);
             return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[3],1)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             OSD::do_OSD(fabgl::VK_F2);
             return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[3],2)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             OSD::do_OSD(fabgl::VK_F3);
             return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[3],3)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             OSD::do_OSD(fabgl::VK_F4);
             return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[3],4)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             OSD::do_OSD(fabgl::VK_F5);
             return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[4],4)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             OSD::do_OSD(fabgl::VK_F6);
             return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[4],3)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             OSD::do_OSD(fabgl::VK_F7);
             return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[4],2)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             OSD::do_OSD(fabgl::VK_F8);
             return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[4],1)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             OSD::do_OSD(fabgl::VK_F9);
             return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[4],0)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             OSD::do_OSD(fabgl::VK_F10);
             return;
         } else
         if (!bitRead(ZXKeyb::ZXcols[2],0)) {
+            ZXKeyb::PrevFkeyOSD = 50;
             CaptureToBmp();
             return;
-        }
+        } else
         if (!bitRead(ZXKeyb::ZXcols[2],1)) {
+            ZXKeyb::PrevFkeyOSD = 200;
             OSD::do_OSD(fabgl::VK_F12);
             return;
         }
+    }
+    if (ZXKeyb::PrevFkeyOSD > 0) {
+        ZXKeyb::PrevFkeyOSD --;
     }
 
     // Combine both keyboards
