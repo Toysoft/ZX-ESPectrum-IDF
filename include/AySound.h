@@ -158,7 +158,7 @@ public:
     static void prepare_generation();
     static void gen_sound(unsigned char *buff, size_t bufsize, int bufpos);
 
-    static void(*updateReg[14])();
+    //static void(*updateReg[14])();
 
 private:
 

@@ -77,11 +77,11 @@ uint32_t AySound::lfsr;                  /**< random numbers counter */
 uint8_t AySound::regs[14];
 int max_audio;
 
-void (*AySound::updateReg[14])() = {
-    &updToneA,&updToneA,&updToneB,&updToneB,&updToneC,
-    &updToneC,&updNoisePitch,&updMixer,&updVolA,&updVolB,
-    &updVolC,&updEnvFreq,&updEnvFreq,&updEnvType
-};
+//void (*AySound::updateReg[14])() = {
+//    &updToneA,&updToneA,&updToneB,&updToneB,&updToneC,
+//    &updToneC,&updNoisePitch,&updMixer,&updVolA,&updVolB,
+//    &updVolC,&updEnvFreq,&updEnvFreq,&updEnvType
+//};
 
 // Status
 uint8_t AySound::selectedRegister;
@@ -277,6 +277,7 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
 
         mix_l = 0;
         for (int m = 0 ; m < ChipTacts_per_outcount ; m++) {
+
             if (++cnt_a >= ayregs.tone_a) {
                 cnt_a = 0;
                 bit_a = !bit_a;
@@ -406,7 +407,23 @@ void AySound::setRegisterData(uint8_t data)
     
     if (selectedRegister < 14) {
         regs[selectedRegister] = data;
-        updateReg[selectedRegister]();
+        switch(selectedRegister) {
+        case 0x00: 
+        case 0x01: updToneA(); break;
+        case 0x02: 
+        case 0x03: updToneB(); break;
+        case 0x04:
+        case 0x05: updToneC(); break;
+        case 0x06: updNoisePitch(); break;
+        case 0x07: updMixer(); break;
+        case 0x08: updVolA(); break;
+        case 0x09: updVolB(); break;
+        case 0x0a: updVolC(); break;
+        case 0x0b: 
+        case 0x0c: updEnvFreq();break;
+        case 0x0d: updEnvType();break;
+        }
+        //updateReg[selectedRegister]();
     } 
 }
 
@@ -424,7 +441,5 @@ void AySound::reset()
     for (int i=0;i<14;i++) regs[i] = 0;
 
     selectedRegister = 0xFF;
-
-    for(int i=0; i<14; i++) updateReg[i]();
 
 }
