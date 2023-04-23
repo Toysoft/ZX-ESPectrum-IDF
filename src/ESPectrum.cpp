@@ -834,7 +834,6 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
             }
 
         } else {
-
             if (faudbufcntAY < ESP_AUDIO_SAMPLES_128) 
                 AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
 

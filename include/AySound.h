@@ -146,6 +146,7 @@ public:
 
     static void reset();
     static uint8_t getRegisterData();
+    static uint8_t genSpeech();
     static void selectRegister(uint8_t data);
     static void setRegisterData(uint8_t data);
 
