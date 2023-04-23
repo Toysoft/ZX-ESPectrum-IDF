@@ -259,9 +259,25 @@ void AySound::prepare_generation()
 // Fill sound buffer with current register data
 //
 
-
-
 void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
+{
+  if (regs[7] == 0x3f)
+     genSpeech(buff, sound_bufsize,bufpos);
+  else 
+     gen_sound2(buff, sound_bufsize,bufpos);
+}
+
+void AySound::genSpeech(unsigned char *buff, size_t sound_bufsize, int bufpos)
+{
+    unsigned char *sound_buf = buff;
+    sound_buf += bufpos;
+
+    while (sound_bufsize-- > 0) {
+        *sound_buf++ =  table[(regs[8] & 0x0f) * 2 + 1]; 
+    }
+}
+
+void AySound::gen_sound2(unsigned char *buff, size_t sound_bufsize, int bufpos)
 {
 
     uint16_t mix_l;
@@ -313,20 +329,19 @@ void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
             uint8_t chan_b=(bit_b | !ayregs.R7_tone_b) & (bit_n | !ayregs.R7_noise_b);
             uint8_t chan_c=(bit_c | !ayregs.R7_tone_c) & (bit_n | !ayregs.R7_noise_c);
 
-            tmpvol= chan_a ? ayregs.env_a ? ENVVOL : ayregs.vol_a * 2 + 1 : (regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
+            tmpvol= chan_a ? ayregs.env_a ? ENVVOL : ayregs.vol_a * 2 + 1 : 0;//(regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
             mix_l  +=table[tmpvol];
             
-            tmpvol= chan_b ? ayregs.env_b ? ENVVOL : ayregs.vol_b * 2 + 1 : (regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
+            tmpvol= chan_b ? ayregs.env_b ? ENVVOL : ayregs.vol_b * 2 + 1 : 0;//(regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
             mix_l  +=table[tmpvol];
 
-            tmpvol= chan_c ? ayregs.env_c ? ENVVOL : ayregs.vol_c * 2 + 1 : (regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
+            tmpvol= chan_c ? ayregs.env_c ? ENVVOL : ayregs.vol_c * 2 + 1 : 0;//(regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
             mix_l  +=table[tmpvol];
 
         } 
     
-
-        mix_l = (regs[7]==0x3f)? mix_l/(ChipTacts_per_outcount*2) : mix_l / ChipTacts_per_outcount;
         
+        mix_l = mix_l / ChipTacts_per_outcount;
         *sound_buf++ =  (uint8_t) mix_l;
 
         if (mix_l > max_audio)
@@ -423,7 +438,6 @@ void AySound::setRegisterData(uint8_t data)
         case 0x0c: updEnvFreq();break;
         case 0x0d: updEnvType();break;
         }
-        //updateReg[selectedRegister]();
     } 
 }
 

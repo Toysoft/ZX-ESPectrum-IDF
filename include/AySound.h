@@ -146,7 +146,6 @@ public:
 
     static void reset();
     static uint8_t getRegisterData();
-    static uint8_t genSpeech();
     static void selectRegister(uint8_t data);
     static void setRegisterData(uint8_t data);
 
@@ -157,6 +156,9 @@ public:
     static int set_sound_format(int freq, int chans, int bits);
     static void prepare_generation();
     static void gen_sound(unsigned char *buff, size_t bufsize, int bufpos);
+    static void gen_sound2(unsigned char *buff, size_t bufsize, int bufpos);
+    static void genSpeech(unsigned char *buff, size_t bufsize, int bufpos);
+
 
     //static void(*updateReg[14])();
 
