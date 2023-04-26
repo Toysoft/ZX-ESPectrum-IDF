@@ -76,6 +76,7 @@ int AySound::env_pos;                   /**< current position in envelop (0...12
 uint32_t AySound::lfsr;                  /**< random numbers counter */
 uint8_t AySound::regs[14];
 int max_audio;
+int period_noise;
 
 //void (*AySound::updateReg[14])() = {
 //    &updToneA,&updToneA,&updToneB,&updToneB,&updToneC,
@@ -88,8 +89,8 @@ uint8_t AySound::selectedRegister;
 
 // #define AYEMU_MAX_AMP 40000; // This results in output values between 0-158
 
-#define AYEMU_MAX_AMP 158 //140 // This results in output values between 0-158
 
+#define AYEMU_MAX_AMP 158 //140 // This results in output values between 0-158
 #define AYEMU_DEFAULT_CHIP_FREQ 1773400
 
 /* sound chip volume envelops (will calculated by gen_env()) */
@@ -254,35 +255,34 @@ void AySound::prepare_generation()
     dirty = 0;
 }
 
-//
-// Generate sound.
-// Fill sound buffer with current register data
-//
+uint8_t filter(uint8_t x) {
+    #define filt_N 24 // filter order (start with order 10)
+    static uint8_t filt_buf[filt_N] = {0}; // circular buffer to hold previous samples
+    static uint8_t filt_index = 0; // current index in the buffer
+    uint16_t filt_sum = 0; // sum of the previous samples
+
+    
+    filt_buf[filt_index] = x; // add the current sample to the buffer
+    
+    for (int i = 0; i < filt_N; i++) {
+        filt_sum += filt_buf[i]; // add up the previous samples
+    }
+    
+    filt_index = (filt_index + 1) % filt_N; // update the index in the circular buffer
+    
+    return (uint8_t)(filt_sum / filt_N); // return the filtered sample
+}
+
 
 void AySound::gen_sound(unsigned char *buff, size_t sound_bufsize, int bufpos)
 {
-  if (regs[7] == 0x3f)
-     genSpeech(buff, sound_bufsize,bufpos);
-  else 
-     gen_sound2(buff, sound_bufsize,bufpos);
-}
-
-void AySound::genSpeech(unsigned char *buff, size_t sound_bufsize, int bufpos)
-{
-    unsigned char *sound_buf = buff;
-    sound_buf += bufpos;
-
-    while (sound_bufsize-- > 0) {
-        *sound_buf++ =  table[(regs[8] & 0x0f) * 2 + 1]; 
-    }
-}
-
-void AySound::gen_sound2(unsigned char *buff, size_t sound_bufsize, int bufpos)
-{
 
     uint16_t mix_l;
-    uint16_t tmpvol;
-    
+    uint16_t tmpVolA;
+    uint16_t tmpVolB;
+    uint16_t tmpVolC;
+
+
     unsigned char *sound_buf = buff;
     
     sound_buf += bufpos;
@@ -290,9 +290,10 @@ void AySound::gen_sound2(unsigned char *buff, size_t sound_bufsize, int bufpos)
     int snd_numcount = sound_bufsize / (sndfmt.channels * (sndfmt.bpc >> 3));
    
     while (snd_numcount-- > 0) {
-
+    
         mix_l = 0;
-        for (int m = 0 ; m < ChipTacts_per_outcount ; m++) {
+        for (int m = 0 ; m < ChipTacts_per_outcount; m++) {
+        
 
             if (++cnt_a >= ayregs.tone_a) {
                 cnt_a = 0;
@@ -308,10 +309,11 @@ void AySound::gen_sound2(unsigned char *buff, size_t sound_bufsize, int bufpos)
                 cnt_c = 0;
                 bit_c = !bit_c;
             }
-
-            if(++cnt_n >= ayregs.noise)
+            
+            if(++cnt_n >= period_noise<<1)
             {
                 cnt_n = 0;
+                period_noise = ayregs.noise;                       
                 lfsr = (lfsr >> 1) ^ ((lfsr & 1) ? 0x14000 : 0);
                 bit_n = lfsr & 1;
             }        
@@ -323,35 +325,34 @@ void AySound::gen_sound2(unsigned char *buff, size_t sound_bufsize, int bufpos)
                 ;
             }
 
-            #define ENVVOL Envelope[ayregs.env_style][env_pos |=1]
-
-            uint8_t chan_a=(bit_a | !ayregs.R7_tone_a) & (bit_n | !ayregs.R7_noise_a);
-            uint8_t chan_b=(bit_b | !ayregs.R7_tone_b) & (bit_n | !ayregs.R7_noise_b);
-            uint8_t chan_c=(bit_c | !ayregs.R7_tone_c) & (bit_n | !ayregs.R7_noise_c);
-
-            tmpvol= chan_a ? ayregs.env_a ? ENVVOL : ayregs.vol_a * 2 + 1 : 0;//(regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
-            mix_l  +=table[tmpvol];
+#define ENVVOL Envelope[ayregs.env_style][env_pos |=1]
             
-            tmpvol= chan_b ? ayregs.env_b ? ENVVOL : ayregs.vol_b * 2 + 1 : 0;//(regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
-            mix_l  +=table[tmpvol];
+            uint8_t chanA=(bit_a | ayregs.R7_tone_a) & (bit_n | ayregs.R7_noise_a);
+            uint8_t chanB=(bit_b | ayregs.R7_tone_b) & (bit_n | ayregs.R7_noise_b);
+            uint8_t chanC=(bit_c | ayregs.R7_tone_c) & (bit_n | ayregs.R7_noise_c);
 
-            tmpvol= chan_c ? ayregs.env_c ? ENVVOL : ayregs.vol_c * 2 + 1 : 0;//(regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
-            mix_l  +=table[tmpvol];
+            tmpVolA= chanA ? ayregs.env_a ? ENVVOL : ayregs.vol_a * 2 + 1 : 0;//(regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
+            tmpVolB= chanB ? ayregs.env_b ? ENVVOL : ayregs.vol_b * 2 + 1 : 0;//(regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
+            tmpVolC= chanC ? ayregs.env_c ? ENVVOL : ayregs.vol_c * 2 + 1 : 0;//(regs[7]==0x3f)? (regs[8] & 0x0f) * 2 + 1 : 0;
 
+            mix_l  += table[tmpVolA]+table[tmpVolB]+table[tmpVolC];
         } 
     
-        
-        mix_l = mix_l / ChipTacts_per_outcount;
-        *sound_buf++ =  (uint8_t) mix_l;
+       
+        mix_l = mix_l  / ChipTacts_per_outcount;
+        mix_l= filter(mix_l);
+        *sound_buf++ =  (int8_t) mix_l;
+
 
         if (mix_l > max_audio)
         {
          max_audio=mix_l;
-         printf("Max: %d\n",max_audio);
+         printf("Max: %d %x %x %x %x -- %x %x %x\n",max_audio,regs[7],regs[8],regs[9],regs[10],ayregs.R7_noise_a,ayregs.R7_noise_b,ayregs.R7_noise_c);
         }
     }
 
 }
+
 
 void AySound::updToneA() {
     ayregs.tone_a = regs[0] + ((regs[1] & 0x0f) << 8);
@@ -370,28 +371,28 @@ void AySound::updNoisePitch() {
 }
 
 void AySound::updMixer() {
-    ayregs.R7_tone_a = !(regs[7] & 0x01);
-    ayregs.R7_tone_b = !(regs[7] & 0x02);
-    ayregs.R7_tone_c = !(regs[7] & 0x04);
+    ayregs.R7_tone_a = regs[7] &1;
+    ayregs.R7_tone_b = regs[7] >>1 &1;
+    ayregs.R7_tone_c = regs[7] >>2 &1;
 
-    ayregs.R7_noise_a = !(regs[7] & 0x08);
-    ayregs.R7_noise_b = !(regs[7] & 0x10);
-    ayregs.R7_noise_c = !(regs[7] & 0x20);
+    ayregs.R7_noise_a = regs[7] >>3 &1;
+    ayregs.R7_noise_b = regs[7] >>4 &1;
+    ayregs.R7_noise_c = regs[7] >>5 &1;
 }
 
 void AySound::updVolA() {
     ayregs.vol_a = regs[8] & 0x0f;
-    ayregs.env_a = regs[8] & 0x10;
+    ayregs.env_a = regs[8] >>4 &1;
 }
 
 void AySound::updVolB() {
     ayregs.vol_b = regs[9] & 0x0f;
-    ayregs.env_b = regs[9] & 0x10;
+    ayregs.env_b = regs[9] >>4 &1;
 }
 
 void AySound::updVolC() {
     ayregs.vol_c = regs[10] & 0x0f;
-    ayregs.env_c = regs[10] & 0x10;
+    ayregs.env_c = regs[10] >>4 &1;
 }
 
 void AySound::updEnvFreq() {
@@ -421,7 +422,7 @@ void AySound::setRegisterData(uint8_t data)
 {
     
     if (selectedRegister < 14) {
-        regs[selectedRegister] = data;
+        regs[selectedRegister] = data & register_masks[selectedRegister];
         switch(selectedRegister) {
         case 0x00: 
         case 0x01: updToneA(); break;
@@ -452,8 +453,12 @@ void AySound::reset()
 
     prepare_generation();
 
-    for (int i=0;i<14;i++) regs[i] = 0;
-
+    for (int i=0;i<14;i++){
+       selectedRegister=i;
+       setRegisterData(0);
+    }
+    selectedRegister=7;
+    setRegisterData(0xff);
     selectedRegister = 0xFF;
 
 }

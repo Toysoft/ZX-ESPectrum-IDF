@@ -44,7 +44,7 @@
 using namespace std;
 
 #define ESP_AUDIO_OVERSAMPLES_48 4368
-#define ESP_AUDIO_FREQ_48 31250 // In 48K calcs are perfect :) -> ESP_AUDIO_SAMPLES_48 * 50,0801282 frames per second = 31250 Hz
+#define ESP_AUDIO_FREQ_48 31250  // In 48K calcs are perfect :) -> ESP_AUDIO_SAMPLES_48 * 50,0801282 frames per second = 31250 Hz
 #define ESP_AUDIO_SAMPLES_48  624
 
 #define ESP_AUDIO_OVERSAMPLES_128 3732
