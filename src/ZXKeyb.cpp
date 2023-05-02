@@ -3,7 +3,6 @@
 #include "Ports.h"
 
 uint8_t ZXKeyb::ZXcols[8];
-uint8_t ZXKeyb::PrevFkeyOSD = 0;
 
 void ZXKeyb::setup()
 {
