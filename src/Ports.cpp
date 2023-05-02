@@ -159,7 +159,7 @@ void IRAM_ATTR Ports::output(uint16_t address, uint8_t data) {
         }
     
         if (Tape::tapeStatus==TAPE_LOADING)
-            if (TapeBit) data |= 0x10;
+            if (TapeBit) data |= 0x00001000; else data &= 0b11110111;
         
         int Audiobit = sp_volt[data >> 3 & 3];
         if (Audiobit != ESPectrum::lastaudioBit) {

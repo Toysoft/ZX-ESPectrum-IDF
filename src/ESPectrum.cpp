@@ -525,7 +525,7 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             r = false;
         }
         #ifdef DEV_STUFF 
-        else if (Nextkey->vk == fabgl::VK_DEGREE) { // Show mem info
+        else if (Nextkey->vk == fabgl::VK_GRAVEACCENT) { // Show mem info
             multi_heap_info_t info;
             heap_caps_get_info(&info, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // internal RAM, memory capable to store data or to create new task
             printf("=========================================================================\n");
@@ -584,7 +584,22 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     fabgl::VirtualKey KeytoESP;
     bool Kdown;
     bool r = false;
-
+    
+    if (OSD::KeytoEMU != fabgl::VK_NONE) { // Send keydown to queue from onscreen virtual keyboard
+        if (OSD::KeytoEMUtime == 0) {
+            Kbd->emptyVirtualKeyQueue(); // Set all keys as not pressed
+            Kbd->injectVirtualKey(fabgl::VK_RETURN, false, false); // Solve problem of return key still pressed from OSD
+            Kbd->injectVirtualKey(OSD::KeytoEMU, true, false);
+        }
+        if (OSD::KeytoEMUtime < 10) { // Ensure the press of the onscreen key will be simulated enough time
+            OSD::KeytoEMUtime ++;
+        } else {
+            Kbd->injectVirtualKey(OSD::KeytoEMU, false, false); // Send keyup to queue from onscreen virtual keyboard when the needed time is reached
+            OSD::KeytoEMU = fabgl::VK_NONE;
+            OSD::KeytoEMUtime = 0;
+        }
+    }
+    
     while (Kbd->virtualKeyAvailable()) {
 
         r = readKbd(&NextKey);
@@ -665,7 +680,6 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             bitWrite(PS2cols[5], 2, (!Kbd->isVKDown(fabgl::VK_I)) & (!Kbd->isVKDown(fabgl::VK_i)));
             bitWrite(PS2cols[5], 3, (!Kbd->isVKDown(fabgl::VK_U)) & (!Kbd->isVKDown(fabgl::VK_u)));
             bitWrite(PS2cols[5], 4, (!Kbd->isVKDown(fabgl::VK_Y)) & (!Kbd->isVKDown(fabgl::VK_y)));
-
             bitWrite(PS2cols[6], 0, !Kbd->isVKDown(fabgl::VK_RETURN));
             bitWrite(PS2cols[6], 1, (!Kbd->isVKDown(fabgl::VK_L)) & (!Kbd->isVKDown(fabgl::VK_l)));
             bitWrite(PS2cols[6], 2, (!Kbd->isVKDown(fabgl::VK_K)) & (!Kbd->isVKDown(fabgl::VK_k)));
@@ -697,6 +711,11 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
     else
         // Process physical keyboard
         ZXKeyb::process();
+    
+    if ((!bitRead(ZXKeyb::ZXcols[7],1)) && (!bitRead(ZXKeyb::ZXcols[6],0))) { ///////
+        for (uint8_t i = 0; i < 8; i++) ZXKeyb::ZXcols[i] = 0x1f;
+        OSD::do_OSD(fabgl::VK_F1);
+    }
 
     // Detect and process physical kbd menu key combinations
     // CS+SS+N -> FN Keys
@@ -751,7 +770,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
         }
     
     }
-
+    
     // Combine both keyboards
     for (uint8_t rowidx = 0; rowidx < 8; rowidx++) {
         Ports::port[rowidx] = PS2cols[rowidx] & ZXKeyb::ZXcols[rowidx];

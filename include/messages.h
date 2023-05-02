@@ -112,14 +112,16 @@ static const char *MENU_TAPE[2] = { MENU_TAPE_EN,MENU_TAPE_ES };
     "Reset\t>\n"\
     "Options\t>\n"\
     "Help\n"\
-    "About\n"
+    "About\n"\
+    "Virtual keyboard\t>\n"
 #define MENU_MAIN_ES /*"Menu principal\n"*/ \
     "Snapshots\t>\n"\
     "Casete\t>\n"\
     "Resetear\t>\n"\
     "Opciones\t>\n"\
     "Ayuda\n"\
-    "Acerca de\n"
+    "Acerca de\n"\
+    "Teclado en pantalla\t>\n"
 static const char *MENU_MAIN[2] = { MENU_MAIN_EN,MENU_MAIN_ES };
 
 #define MENU_OPTIONS_EN \
@@ -347,5 +349,89 @@ static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
     " [Pause]   Pausa\n"\
     " [ImpPant] Captura BMP (Carpeta SD /c)\n"
 static const char *OSD_HELP[2] = { OSD_HELP_EN, OSD_HELP_ES };
+
+#define MENU_VIRTUAL_KBD_EN "Select key\n"\
+    "1\n"\
+    "2\n"\
+    "3\n"\
+    "4\n"\
+    "5\n"\
+    "6\n"\
+    "7\n"\
+    "8\n"\
+    "9\n"\
+    "0\n"\
+    "A\n"\
+    "B\n"\
+    "C\n"\
+    "D\n"\
+    "E\n"\
+    "F\n"\
+    "G\n"\
+    "H\n"\
+    "I\n"\
+    "J\n"\
+    "K\n"\
+    "L\n"\
+    "M\n"\
+    "N\n"\
+    "O\n"\
+    "P\n"\
+    "Q\n"\
+    "R\n"\
+    "S\n"\
+    "T\n"\
+    "U\n"\
+    "V\n"\
+    "W\n"\
+    "X\n"\
+    "Y\n"\
+    "Z\n"\
+    "ENTER\n"\
+    "SPACE\n"\
+    "CAPS SHIFT\n"\
+    "SYMBOL SHIFT\n"
+#define MENU_VIRTUAL_KBD_ES "Elija tecla\n"\
+    "1\n"\
+    "2\n"\
+    "3\n"\
+    "4\n"\
+    "5\n"\
+    "6\n"\
+    "7\n"\
+    "8\n"\
+    "9\n"\
+    "0\n"\
+    "A\n"\
+    "B\n"\
+    "C\n"\
+    "D\n"\
+    "E\n"\
+    "F\n"\
+    "G\n"\
+    "H\n"\
+    "I\n"\
+    "J\n"\
+    "K\n"\
+    "L\n"\
+    "M\n"\
+    "N\n"\
+    "O\n"\
+    "P\n"\
+    "Q\n"\
+    "R\n"\
+    "S\n"\
+    "T\n"\
+    "U\n"\
+    "V\n"\
+    "W\n"\
+    "X\n"\
+    "Y\n"\
+    "Z\n"\
+    "ENTER\n"\
+    "ESPACIO\n"\
+    "CAPS SHIFT\n"\
+    "SYMBOL SHIFT\n"
+static const char *MENU_VIRTUAL_KBD[2] = { MENU_VIRTUAL_KBD_EN, MENU_VIRTUAL_KBD_ES };
 
 #endif // ESPECTRUM_MESSAGES_h
