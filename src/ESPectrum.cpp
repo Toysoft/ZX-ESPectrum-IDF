@@ -98,7 +98,7 @@ fabgl::PS2Controller ESPectrum::PS2Controller;
 //=======================================================================================
 uint8_t ESPectrum::audioBuffer[ESP_AUDIO_SAMPLES_48] = { 0 };
 uint8_t ESPectrum::overSamplebuf[ESP_AUDIO_OVERSAMPLES_48] = { 0 };
-uint8_t ESPectrum::SamplebufAY[ESP_AUDIO_SAMPLES_48] = { 0 };
+// uint8_t ESPectrum::SamplebufAY[ESP_AUDIO_SAMPLES_48] = { 0 };
 signed char ESPectrum::aud_volume = ESP_DEFAULT_VOLUME;
 uint32_t ESPectrum::audbufcnt = 0;
 uint32_t ESPectrum::faudbufcnt = 0;
@@ -190,35 +190,10 @@ void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 //=======================================================================================
 // SETUP
 //=======================================================================================
+TaskHandle_t loopTaskHandle;
+
 void ESPectrum::setup() 
 {
-
-    // esp_err_t ret;
-    // esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-
-    // ret = esp_bt_controller_init(&bt_cfg);
-    // if (ret) {
-    //     ESP_LOGE(GATTC_TAG, "%s enable controller failed\n", __func__);
-    //     return;
-    // }
-
-    // ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
-    // if (ret) {
-    //     ESP_LOGE(GATTC_TAG, "%s enable controller failed\n", __func__);
-    //     return;
-    // }
-
-    // ESP_LOGI(GATTC_TAG, "%s init bluetooth\n", __func__);
-    // ret = esp_bluedroid_init();
-    // if (ret) {
-    //     ESP_LOGE(GATTC_TAG, "%s init bluetooth failed\n", __func__);
-    //     return;
-    // }
-    // ret = esp_bluedroid_enable();
-    // if (ret) {
-    //     ESP_LOGE(GATTC_TAG, "%s enable bluetooth failed\n", __func__);
-    //     return;
-    // }
 
     //=======================================================================================
     // FILESYSTEM
@@ -226,7 +201,8 @@ void ESPectrum::setup()
     FileUtils::initFileSystem();
     Config::load();
     
-#ifndef ESP32_SDL2_WRAPPER
+    #ifndef ESP32_SDL2_WRAPPER
+
     // Get chip information
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
@@ -252,7 +228,8 @@ void ESPectrum::setup()
         showMemInfo();
 
     }
-#endif
+    
+    #endif
 
     //=======================================================================================
     // KEYBOARD
@@ -261,25 +238,12 @@ void ESPectrum::setup()
     PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
     PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
 
-    // string cfgLayout = Config::kbd_layout;
-
-    // if(cfgLayout == "ES") 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::SpanishLayout);                
-    // else if(cfgLayout == "UK") 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::UKLayout);                
-    // else if(cfgLayout == "DE") 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::GermanLayout);                
-    // else if(cfgLayout == "FR") 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::FrenchLayout);            
-    // else 
-    //         PS2Controller.keyboard()->setLayout(&fabgl::USLayout);
-
     if (Config::slog_on) {
         showMemInfo("Keyboard started");
     }
 
     //=======================================================================================
-    // PHYSICAL KEYBOARD (SINCLAIR 8+5 MEMBRANE KEYBOARD)
+    // PHYSICAL KEYBOARD (SINCLAIR 8 + 5 MEMBRANE KEYBOARD)
     //=======================================================================================
 
     #ifdef ZXKEYB
@@ -383,27 +347,29 @@ void ESPectrum::setup()
     Tape::SaveStatus = SAVE_STOPPED;
     Tape::romLoading = false;
 
-    // START Z80
+    // Init Z80
     CPU::setup();
 
-    // Ports
+    // Set Ports starting values
     for (int i = 0; i < 128; i++) Ports::port[i] = 0x1F;
     if (Config::joystick) Ports::port[0x1f] = 0; // Kempston
 
-    // Emu loop sync target
+    // Set emulation loop sync target
     target = CPU::microsPerFrame();
 
+    // Load romset
     Config::requestMachine(Config::getArch(), Config::getRomSet(), true);
 
     #ifdef SNAPSHOT_LOAD_LAST
-
+    // Load last snapshot
     if (Config::ram_file != NO_RAM_FILE) {
         OSD::changeSnapshot(Config::ram_file);
     }
-
     #endif // SNAPSHOT_LOAD_LAST
 
     if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
+
+    xTaskCreatePinnedToCore(&ESPectrum::loop, "loopTask", 4096, NULL, 1, &loopTaskHandle, 0);
 
 }
 
@@ -449,7 +415,7 @@ void ESPectrum::reset()
     for (int i=0;i<ESP_AUDIO_OVERSAMPLES_48;i++) overSamplebuf[i]=0;
     for (int i=0;i<ESP_AUDIO_SAMPLES_48;i++) {
         audioBuffer[i]=0;
-        SamplebufAY[i]=0;
+        AySound::SamplebufAY[i]=0;
     }
     lastaudioBit=0;
 
@@ -469,7 +435,7 @@ void ESPectrum::reset()
     ESPoffset = 0;
 
     pwm_audio_stop();
-    pwm_audio_set_sample_rate(Audio_freq);
+    pwm_audio_set_param(Audio_freq,LEDC_TIMER_8_BIT,1);
     pwm_audio_start();
     pwm_audio_set_volume(aud_volume);
 
@@ -521,7 +487,9 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
     // Global keys
     if (Nextkey->down) {
         if (Nextkey->vk == fabgl::VK_PRINTSCREEN) { // Capture framebuffer to BMP file in SD Card (thx @dcrespo3d!)
+            pwm_audio_stop();
             CaptureToBmp();
+            pwm_audio_start();
             r = false;
         }
         #ifdef DEV_STUFF 
@@ -561,7 +529,9 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             printf("=========================================================================\n");
             UBaseType_t wm;
             wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
-            printf("Stack HWM: %u\n", wm);
+            printf("Audio Task Stack HWM: %u\n", wm);
+            wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
+            printf("Loop Task Stack HWM: %u\n", wm);
             
             r = false;
         }    
@@ -680,6 +650,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             bitWrite(PS2cols[5], 2, (!Kbd->isVKDown(fabgl::VK_I)) & (!Kbd->isVKDown(fabgl::VK_i)));
             bitWrite(PS2cols[5], 3, (!Kbd->isVKDown(fabgl::VK_U)) & (!Kbd->isVKDown(fabgl::VK_u)));
             bitWrite(PS2cols[5], 4, (!Kbd->isVKDown(fabgl::VK_Y)) & (!Kbd->isVKDown(fabgl::VK_y)));
+
             bitWrite(PS2cols[6], 0, !Kbd->isVKDown(fabgl::VK_RETURN));
             bitWrite(PS2cols[6], 1, (!Kbd->isVKDown(fabgl::VK_L)) & (!Kbd->isVKDown(fabgl::VK_l)));
             bitWrite(PS2cols[6], 2, (!Kbd->isVKDown(fabgl::VK_K)) & (!Kbd->isVKDown(fabgl::VK_k)));
@@ -832,7 +803,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
 
             if (AY_emu) {
                 if (faudbufcntAY < ESP_AUDIO_SAMPLES_48)
-                    AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_48 - faudbufcntAY , faudbufcntAY);
+                    AySound::gen_sound(ESP_AUDIO_SAMPLES_48 - faudbufcntAY , faudbufcntAY);
             }
 
             int n = 0;
@@ -846,7 +817,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+5];
                 beeper +=  overSamplebuf[i+6];
 
-                beeper = AY_emu ? (beeper / 7) + SamplebufAY[n] : beeper / 7;
+                beeper = AY_emu ? (beeper / 7) + AySound::SamplebufAY[n] : beeper / 7;
                 // if (bmax < SamplebufAY[n]) bmax = SamplebufAY[n];
                 audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
 
@@ -855,7 +826,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
         } else {
 
             if (faudbufcntAY < ESP_AUDIO_SAMPLES_128)
-                AySound::gen_sound(SamplebufAY, ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
+                AySound::gen_sound(ESP_AUDIO_SAMPLES_128 - faudbufcntAY , faudbufcntAY);
 
             int n = 0;
             for (int i=0;i<ESP_AUDIO_OVERSAMPLES_128; i += 6) {
@@ -867,7 +838,7 @@ void IRAM_ATTR ESPectrum::audioTask(void *unused) {
                 beeper +=  overSamplebuf[i+4];
                 beeper +=  overSamplebuf[i+5];
 
-                beeper =  (beeper / 6) + SamplebufAY[n];
+                beeper =  (beeper / 6) + AySound::SamplebufAY[n];
                 // if (bmax < SamplebufAY[n]) bmax = SamplebufAY[n];
                 audioBuffer[n++] = beeper > 255 ? 255 : beeper; // Clamp
 
@@ -898,7 +869,7 @@ void IRAM_ATTR ESPectrum::AYGetSample() {
     // AY buffer generation
     uint32_t audbufpos = CPU::tstates / (Z80Ops::is48 ? 112 : 114);
     if (audbufpos != audbufcntAY) {
-        AySound::gen_sound(SamplebufAY, audbufpos - audbufcntAY , audbufcntAY);
+        AySound::gen_sound(audbufpos - audbufcntAY , audbufcntAY);
         audbufcntAY = audbufpos;
     }
 }
@@ -921,7 +892,8 @@ void ESPectrum::audioFrameEnd() {
 int ESPectrum::sync_cnt = 0;
 uint8_t *ESPectrum::audbuffertosend = ESPectrum::audioBuffer;
 
-void IRAM_ATTR ESPectrum::loop() {
+void IRAM_ATTR ESPectrum::loop(void *unused) {
+// void IRAM_ATTR ESPectrum::loop() {    
 
 static char linea1[] = "CPU: 00000 / IDL: 00000 ";
 static char linea2[] = "FPS:000.00 / FND:000.00 ";    

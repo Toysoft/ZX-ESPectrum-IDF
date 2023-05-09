@@ -58,7 +58,8 @@ class ESPectrum
 public:
 
     static void setup();
-    static void IRAM_ATTR loop();
+    static void IRAM_ATTR loop(void* unused);
+    // static void IRAM_ATTR loop();    
     static void reset();
     static void loadRom(string arch, string romset);
 
@@ -71,7 +72,7 @@ public:
     // Audio
     static uint8_t audioBuffer[ESP_AUDIO_SAMPLES_48];
     static uint8_t overSamplebuf[ESP_AUDIO_OVERSAMPLES_48];
-    static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_48];
+    // static uint8_t SamplebufAY[ESP_AUDIO_SAMPLES_48];
     static signed char aud_volume;
     static uint32_t audbufcnt;
     static uint32_t audbufcntAY;
