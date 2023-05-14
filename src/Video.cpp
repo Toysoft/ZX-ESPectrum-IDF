@@ -176,14 +176,25 @@ void precalcborder32()
 
 void VIDEO::Init() {
 
-    const Mode& vgaMode = Config::aspect_16_9 ? vga.MODE360x200 : vga.MODE320x240;
-    OSD::scrW = vgaMode.hRes;
-    OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
+    const Mode* vgaMode = NULL;
+    if (Config::aspect_16_9) {
+        if      (Config::vidmode == 2) vgaMode = &VGA::TV_50_16_9;
+        else if (Config::vidmode == 1) vgaMode = &VGA::MON_50_16_9;
+        else                           vgaMode = &VGA::MON_SAFE_16_9;
+    }
+    else {
+        if      (Config::vidmode == 2) vgaMode = &VGA::TV_50_4_3;
+        else if (Config::vidmode == 1) vgaMode = &VGA::MON_50_4_3;
+        else                           vgaMode = &VGA::MON_SAFE_4_3;
+    }
+
+    OSD::scrW = vgaMode->hRes;
+    OSD::scrH = vgaMode->vRes / vgaMode->vDiv;
     
     const int redPins[] = {RED_PINS_6B};
     const int grePins[] = {GRE_PINS_6B};
     const int bluPins[] = {BLU_PINS_6B};
-    vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
+    vga.init(*vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
 
     precalcColors();    // precalculate colors for current VGA mode
 

@@ -64,6 +64,7 @@ public:
     static uint8_t  lang;
     static bool     AY48;
     static uint8_t  joystick;
+    static uint8_t  vidmode;
 
     // config persistence
     static void load();

@@ -299,6 +299,24 @@ void ESPectrum::setup()
     if (Config::slog_on) showMemInfo("RAM Initialized");
 
     //=======================================================================================
+    // VIDEO MODE FORCED BY KEYPRESS
+    //=======================================================================================
+
+    // uint8_t prev_vidmode = Config::vidmode;
+
+    // if (KEYPRESS_AT_BOOT == 'M')
+    //     Config::vidmode = 0;     // monitor safe   
+    // if (KEYPRESS_AT_BOOT == '5')
+    //     Config::vidmode = 1;     // monitor 50Hz   
+    // if (KEYPRESS_AT_BOOT == 'T')
+    //     Config::vidmode = 2;     // TV 50Hz   
+    
+    // if (prev_vidmode != Config::vidmode) {
+    //     printf("Video Mode changed to %d. Saving...\n", Config::vidmode);
+    //     Config::save();
+    // }
+
+    //=======================================================================================
     // VIDEO
     //=======================================================================================
 

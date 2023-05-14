@@ -57,6 +57,7 @@ uint8_t  Config::esp32rev = 0;
 uint8_t  Config::lang = 0;
 bool     Config::AY48 = false;
 uint8_t  Config::joystick = 0; // 0 -> Cursor, 1 -> Kempston
+uint8_t  Config::vidmode = 0; // 0 -> Monitor safe, 1 -> Monitor 50Hz, 2 -> TV 50Hz
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -153,6 +154,11 @@ void Config::load() {
             erase_cntrl(sjoy);
             trim(sjoy);
             Config::joystick = stoi(sjoy);
+        } else if (line.find("vidmode:") != string::npos) {
+            string svim = line.substr(line.find(':') + 1);
+            erase_cntrl(svim);
+            trim(svim);
+            Config::vidmode = stoi(svim);
         }
 
 
@@ -217,6 +223,9 @@ void Config::save() {
 
     // Joystick
     fputs(("joystick:" + std::to_string(Config::joystick) + "\n").c_str(),f);
+
+    // Video mode
+    fputs(("vidmode:" + std::to_string(Config::vidmode) + "\n").c_str(),f);
 
     fclose(f);
     

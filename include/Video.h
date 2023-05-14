@@ -42,6 +42,7 @@
 #include <inttypes.h>
 #include "ESPectrum.h"
 #include "ESP32Lib/ESP32Lib.h"
+#include "ESP32Lib/VGA/Mode.h"
 
 #define SPEC_W 256
 #define SPEC_H 192
