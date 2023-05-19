@@ -10,8 +10,64 @@
 		http://bitluni.net
 */
 #include "VGA.h"
+#include "hardconfig.h"
 
 //hfront hsync hback pixels vfront vsync vback lines divy pixelclock hpolaritynegative vpolaritynegative
+
+// #ifdef VIDEO_VSYNC
+// #define VGA31k_50_MODES
+// #else
+// #define VGA31k_SAFE_MODES
+// #endif
+
+// #define TV15k_48K_MODES
+// #define TV15k_128K_MODES
+
+// #ifdef VGA31k_SAFE_MODES
+
+// PREVIOS 18-05-23
+// const Mode VGA::MODE320x240(8, 48, 24, 320, 11, 2, 31, 480, 2, 12587500, 1, 1, 41,84,7,7,0,0,6,6);  // 31469 / 60.05
+// const Mode VGA::MODE360x200(8, 54, 28, 360, 11, 2, 32, 400, 2, 14161000, 1, 0, 44,84,7,6,0,0,6,5);  // 31469 / 70.72
+
+// AFINADOS 18-05-23
+const Mode VGA::MODE320x240(8, 48, 24, 320, 10, 2, 33, 480, 2, 12587500, 1, 1, 41,84,7,7,0,0,6,6);  // 31469 / 59.94 INDUSTRY STANDARD 
+const Mode VGA::MODE360x200(9, 54, 27, 360, 12, 2, 35, 400, 2, 14160000, 1, 0, 121,233,5,5,0,0,6,5);  // 31467 / 70.08 TAKEN FROM FABGL
+
+// #endif
+
+// #ifdef VGA31k_50_MODES
+
+// 48K -> DAPR AUDIO LAG TEST == CLEAN TONE
+// const Mode VGA::MODE320x240_50_48(8, 48, 24, 320, 11, 2, 31, 480, 2, 10496768, 1, 1, 228,139,7,9,0,0,8,9);  // 26242 / 50.08
+const Mode VGA::MODE320x240_50_48(8, 42, 50, 320, 27, 6, 53, 720, 3, 16953081, 1, 1, 254,221,7,5,0,0,8,5);  // 40364 / 50.08
+const Mode VGA::MODE360x200_50_48(18, 36, 54, 360, 31, 3, 33, 600, 3, 15633396, 1, 1, 74,97,5,4,0,0,7,5);  // 33405 / 50.082
+
+// 128K -> DAPR AUDIO LAG TEST == CLEAN TONE
+// const Mode VGA::MODE320x240_50_128(8, 48, 24, 320, 11, 2, 31, 480, 2, 10483898, 1, 1, 68,136,7,9,0,0,8,9);  // 26210 / 50.0186
+const Mode VGA::MODE320x240_50_128(8, 42, 50, 320, 27, 6, 53, 720, 3, 16932296, 1, 1, 205,40,6,4,0,0,8,5);  // 40315 / 50.02
+const Mode VGA::MODE360x200_50_128(18, 36, 54, 360, 31, 3, 33, 600, 3, 15613606, 1, 1, 64,94,5,4,0,0,7,5);  // 33362 / 50.0186
+
+// #endif
+
+// 48K
+// #ifdef TV15k_48K_MODES
+const Mode VGA::MODE320x240_TV_48(38, 32, 58, 320, 28, 3, 41, 240, 1, 7000000, 1, 1, 0,128,6,13,0,0,8,15);  // 15625 / 50.08
+const Mode VGA::MODE360x200_TV_48(18, 32, 38, 360, 48, 3, 61, 200, 1, 7000000, 1, 1, 0,128,6,13,0,0,8,15);  // 15625 / 50.08
+// #endif
+
+// 128K
+// #ifdef TV15k_128K_MODES
+const Mode VGA::MODE320x240_TV_128(42, 32, 62, 320, 28, 3, 40, 240, 1, 7093800, 1, 1, 107,238,5,12,0,0,8,15);  // 15557 / 50.02
+const Mode VGA::MODE360x200_TV_128(22, 32, 42, 360, 48, 3, 60, 200, 1, 7093800, 1, 1, 107,238,5,12,0,0,8,15);  // 15557 / 50.02
+// #endif
+
+const Mode VGA::videomodes[3][2][2]={
+	{ {MODE320x240, MODE360x200}, {MODE320x240, MODE360x200} },
+	{ {MODE320x240_50_48, MODE360x200_50_48}, {MODE320x240_50_128, MODE360x200_50_128} },
+	{ {MODE320x240_TV_48, MODE360x200_TV_48}, {MODE320x240_TV_128, MODE360x200_TV_128} }
+};				
+
+/* --- unused modes ---
 const Mode VGA::MODE320x480(8, 48, 24, 320, 11, 2, 31, 480, 1, 12587500, 1, 1);
 const Mode VGA::MODE320x240(8, 48, 24, 320, 11, 2, 31, 480, 2, 12587500, 1, 1);
 const Mode VGA::MODE320x400(8, 48, 24, 320, 12, 2, 35, 400, 1, 12587500, 1, 0);
@@ -50,6 +106,7 @@ const PinConfig VGA::VGAv01(2, 4, 12, 13, 14,  15, 16, 17, 18, 19,  21, 22, 23, 
 const PinConfig VGA::VGABlackEdition(2, 4, 12, 13, 14,  15, 16, 17, 18, 19,  21, 22, 23, 27,  32, 33,  -1);
 const PinConfig VGA::VGAWhiteEdition(5, 14, 13, 15, 2,  19, 18, 17, 4, 16,  27, 22, 12, 21,  32, 33, -1);
 const PinConfig VGA::PicoVGA(-1, -1, -1, 18, 5,  -1, -1, -1, 14, 4,  -1, -1, 27, 15,  32, 33,  -1);
+*/
 
 VGA::VGA(const int i2sIndex)
 	: I2S(i2sIndex)
@@ -68,10 +125,13 @@ bool VGA::init(const Mode &mode, const int *pinMap, const int bitCount, const in
 	this->vsyncPin = vsyncPin;
 	this->hsyncPin = hsyncPin;
 	totalLines = mode.linesPerField();
+	// printf("totallines: %d\n",totalLines);
 	allocateLineBuffers();
 	currentLine = 0;
 	vSyncPassed = false;
-	initParallelOutputMode(pinMap, mode.pixelClock, bitCount, clockPin);
+	// initParallelOutputMode(pinMap, mode.pixelClock, bitCount, clockPin);
+	initPrecalcParallelOutputMode(pinMap, mode, bitCount, clockPin);
+
 	startTX();
 	return true;
 }
@@ -177,6 +237,7 @@ void VGA::allocateLineBuffers(void **frameBuffer)
 		dmaBufferDescriptors[d++].setBuffer(inactiveBuffer, inactiveSamples * bytesPerSample());
 		dmaBufferDescriptors[d++].setBuffer(frameBuffer[i / mode.vDiv], mode.hRes * bytesPerSample());
 	}
+	// printf("buffer descriptors count: %d\n",d);
 }
 
 void VGA::vSync()

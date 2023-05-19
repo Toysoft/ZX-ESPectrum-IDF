@@ -39,6 +39,7 @@
 
 #include "ESPectrum.h"
 #include "FileSNA.h"
+#include "FileZ80.h"
 #include "Config.h"
 #include "FileUtils.h"
 #include "OSDMain.h"
@@ -190,17 +191,38 @@ void showMemInfo(const char* caption = "ZX-ESPectrum-IDF") {
 //=======================================================================================
 // SETUP
 //=======================================================================================
-TaskHandle_t loopTaskHandle;
+// TaskHandle_t ESPectrum::loopTaskHandle;
 
 void ESPectrum::setup() 
 {
+
+    //=======================================================================================
+    // KEYBOARD
+    //=======================================================================================
+
+    PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
+    PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
+
+    if (Config::slog_on) {
+        showMemInfo("Keyboard started");
+    }
+
+    //=======================================================================================
+    // PHYSICAL KEYBOARD (SINCLAIR 8 + 5 MEMBRANE KEYBOARD)
+    //=======================================================================================
+
+    #ifdef ZXKEYB
+    ZXKeyb::setup();
+    #endif
 
     //=======================================================================================
     // FILESYSTEM
     //=======================================================================================
     FileUtils::initFileSystem();
     Config::load();
-    
+
+    // Config::videomode = 0;
+
     #ifndef ESP32_SDL2_WRAPPER
 
     // Get chip information
@@ -232,23 +254,61 @@ void ESPectrum::setup()
     #endif
 
     //=======================================================================================
-    // KEYBOARD
+    // BOOTKEYS: Read keyboard for 500 ms. checking boot keys
     //=======================================================================================
 
-    PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
-    PS2Controller.keyboard()->setScancodeSet(2); // IBM PC AT
+    std:string b = "00";
+    std::string s;
+    for (int i=0; i<2000; i++) {
+        s = bootKeyboard();
+        if (s!="") {
+            
+            if (s.length()==2) 
+                b = s; 
+            else {
+                b[0] = b[1];
+                b[1] = s[0];
+            }
 
-    if (Config::slog_on) {
-        showMemInfo("Keyboard started");
+            bool chgRes = true;
+
+            if (b=="1Q" || b=="Q1") {
+                Config::aspect_16_9=false;
+                Config::videomode=0;
+            } else
+            if (b=="1W" || b=="W1") {
+                Config::aspect_16_9=true;
+                Config::videomode=0;
+            } else
+            if (b=="2Q" || b=="Q2") {
+                Config::aspect_16_9=false;
+                Config::videomode=1;
+            } else
+            if (b=="2W" || b=="W2") {
+                Config::aspect_16_9=true;
+                Config::videomode=1;
+            } else
+            if (b=="3Q" || b=="Q3") {
+                Config::aspect_16_9=false;
+                Config::videomode=2;
+            } else
+            if (b=="3W" || b=="W3") {
+                Config::aspect_16_9=true;
+                Config::videomode=2;
+            } else chgRes = false;
+
+            if (chgRes) {
+                Config::ram_file="none";                
+                Config::save();
+                printf("%s\n", b.c_str());
+                break;
+            }
+
+        }
+
+        delayMicroseconds(250);
+
     }
-
-    //=======================================================================================
-    // PHYSICAL KEYBOARD (SINCLAIR 8 + 5 MEMBRANE KEYBOARD)
-    //=======================================================================================
-
-    #ifdef ZXKEYB
-    ZXKeyb::setup();
-    #endif
 
     //=======================================================================================
     // MEMORY SETUP
@@ -331,8 +391,10 @@ void ESPectrum::setup()
     // Create Audio task
     audioTaskQueue = xQueueCreate(1, sizeof(uint8_t *));
     // Latest parameter = Core. In ESPIF, main task runs on core 0 by default. In Arduino, loop() runs on core 1.
-    // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1024, NULL, 5, &audioTaskHandle, 1);
-    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
+
+    // xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 2048, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
+
+    xTaskCreatePinnedToCore(&ESPectrum::audioTask, "audioTask", 1536, NULL, configMAX_PRIORITIES - 1, &audioTaskHandle, 1);
 
     // AY Sound
     AySound::init();
@@ -360,16 +422,28 @@ void ESPectrum::setup()
     // Load romset
     Config::requestMachine(Config::getArch(), Config::getRomSet(), true);
 
-    #ifdef SNAPSHOT_LOAD_LAST
-    // Load last snapshot
+    // Load snapshot if present in Config::ram_file
     if (Config::ram_file != NO_RAM_FILE) {
-        OSD::changeSnapshot(Config::ram_file);
+        
+        if (FileUtils::hasSNAextension(Config::ram_file))
+            FileSNA::load(Config::ram_file);        
+        else if (FileUtils::hasZ80extension(Config::ram_file))
+            FileZ80::load(Config::ram_file);
+
+        Config::last_ram_file = Config::ram_file;
+
+        // ESP host reset
+        #ifndef SNAPSHOT_LOAD_LAST
+        Config::ram_file = NO_RAM_FILE;
+        Config::save();
+        #endif
+
     }
-    #endif // SNAPSHOT_LOAD_LAST
 
     if (Config::slog_on) showMemInfo("ZX-ESPectrum-IDF setup finished.");
 
-    xTaskCreatePinnedToCore(&ESPectrum::loop, "loopTask", 4096, NULL, 1, &loopTaskHandle, 0);
+    // Create loop task
+    // xTaskCreatePinnedToCore(&ESPectrum::loop, "loopTask", 4096, NULL, 1, &loopTaskHandle, 0);
 
 }
 
@@ -530,9 +604,11 @@ bool IRAM_ATTR ESPectrum::readKbd(fabgl::VirtualKeyItem *Nextkey) {
             UBaseType_t wm;
             wm = uxTaskGetStackHighWaterMark(audioTaskHandle);
             printf("Audio Task Stack HWM: %u\n", wm);
-            wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
-            printf("Loop Task Stack HWM: %u\n", wm);
-            
+            // wm = uxTaskGetStackHighWaterMark(loopTaskHandle);
+            // printf("Loop Task Stack HWM: %u\n", wm);
+            wm = uxTaskGetStackHighWaterMark(VIDEO::videoTaskHandle);
+            printf("Video Task Stack HWM: %u\n", wm);
+
             r = false;
         }    
         #endif
@@ -758,6 +834,81 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
 
 }
 
+std::string ESPectrum::bootKeyboard() {
+
+    auto Kbd = PS2Controller.keyboard();
+    fabgl::VirtualKeyItem NextKey;
+    bool r = false;
+
+    #ifdef ZXKEYB
+
+    // Process physical keyboard
+    ZXKeyb::process();
+    // Detect and process physical kbd menu key combinations
+
+    if (!bitRead(ZXKeyb::ZXcols[3], 0)) { // 1
+        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+            return "1Q";
+        } else 
+        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+            return "1W";
+        }
+    } else
+    if (!bitRead(ZXKeyb::ZXcols[3], 1)) { // 2
+        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+            return "2Q";
+        } else 
+        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+            return "2W";
+        }
+    } else
+    if (!bitRead(ZXKeyb::ZXcols[3], 2)) { // 3
+        if (!bitRead(ZXKeyb::ZXcols[2], 0)) { // Q
+            return "3Q";
+        } else 
+        if (!bitRead(ZXKeyb::ZXcols[2], 1)) { // W
+            return "3W";
+        }
+    }
+
+    #endif
+
+    while (Kbd->virtualKeyAvailable()) {
+
+        r = Kbd->getNextVirtualKey(&NextKey);
+        if (r) {
+
+            // Check keyboard status
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) {
+                return "1";
+            }
+
+            // Check keyboard status
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) {
+                return "2";
+            }
+
+            // Check keyboard status
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_3)) {
+                return "3";
+            }
+
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_Q) || PS2Controller.keyboard()->isVKDown(fabgl::VK_q)) {
+                return "Q";
+            }
+
+            if (PS2Controller.keyboard()->isVKDown(fabgl::VK_W) || PS2Controller.keyboard()->isVKDown(fabgl::VK_w)) {
+                return "W";
+            }
+
+        }
+
+    }
+
+    return "";
+
+}
+
 // static int bmax = 0;
 
 //=======================================================================================
@@ -892,8 +1043,10 @@ void ESPectrum::audioFrameEnd() {
 int ESPectrum::sync_cnt = 0;
 uint8_t *ESPectrum::audbuffertosend = ESPectrum::audioBuffer;
 
-void IRAM_ATTR ESPectrum::loop(void *unused) {
-// void IRAM_ATTR ESPectrum::loop() {    
+volatile bool ESPectrum::vsync = false;
+
+// void IRAM_ATTR ESPectrum::loop(void *unused) {
+void IRAM_ATTR ESPectrum::loop() {    
 
 static char linea1[] = "CPU: 00000 / IDL: 00000 ";
 static char linea2[] = "FPS:000.00 / FND:000.00 ";    
@@ -950,16 +1103,8 @@ for(;;) {
     // Flashing flag change
     if (!(VIDEO::flash_ctr++ & 0x0f)) VIDEO::flashing ^= 0x80;
 
-    elapsed = micros() - ts_start;
-    idle = target - elapsed;
-    if (idle < 0) idle = 0;
-
-    #ifdef VIDEO_FRAME_TIMING
-    totalseconds += idle;
-    #endif
-    
-    totalseconds += elapsed;
-    totalsecondsnodelay += elapsed;
+    // OSD calcs
+    totalsecondsnodelay += micros() - ts_start;
     if (totalseconds >= 1000000) {
 
         if (elapsed < 100000) {
@@ -973,11 +1118,12 @@ for(;;) {
             showMemInfo();
             #endif
 
+            // printf("[Framecnt] %u; [Seconds] %f; [FPS] %f; [FPS (no delay)] %f\n", CPU::framecnt, totalseconds / 1000000, CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));
+
             sprintf((char *)linea1,"CPU: %05d / IDL: %05d ", (int)(elapsed), (int)(idle));
             // sprintf((char *)linea1,"CPU: %05d / BMX: %05d ", (int)(elapsed), bmax);
             // sprintf((char *)linea1,"CPU: %05d / OFF: %05d ", (int)(elapsed), (int)(ESPmedian/50));
             sprintf((char *)linea2,"FPS:%6.2f / FND:%6.2f ", CPU::framecnt / (totalseconds / 1000000), CPU::framecnt / (totalsecondsnodelay / 1000000));    
-
         }
 
         totalseconds = 0;
@@ -989,21 +1135,53 @@ for(;;) {
     }
     
     #ifdef VIDEO_FRAME_TIMING    
+   
     elapsed = micros() - ts_start;
     idle = target - elapsed - ESPoffset;
-    if (idle > 0) { 
-        delayMicroseconds(idle);
+    
+    if(Config::videomode) {
+
+        if (sync_cnt++ == 0) {
+            if (idle > 0) { 
+                delayMicroseconds(idle);
+            }
+        } else {
+
+            // Audio sync (once every 250 frames ~ 2,5 seconds)
+            if (sync_cnt++ == 250) {
+                ESPoffset = 128 - pwm_audio_rbstats();
+                sync_cnt = 0;
+            }
+
+            // wait for vertical sync (method 1)
+            for (;;) {
+                if (vsync) break;
+            }
+
+        }
+
+        // // wait for vertical sync (method 2)
+        // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    } else {
+
+        if (idle > 0) { 
+            delayMicroseconds(idle);
+        }
+
+        // Audio sync
+        if (sync_cnt++ & 0x0f) {
+            ESPoffset = 128 - pwm_audio_rbstats();
+            sync_cnt = 0;
+        }
+
+        // ESPmedian += ESPoffset;
+
     }
     
-    // Audio sync
-    if (sync_cnt++ & 0x0f) {
-        ESPoffset = 128 - pwm_audio_rbstats();
-        sync_cnt = 0;
-    }
-
-    // ESPmedian += ESPoffset;
-
     #endif
+
+    totalseconds += micros() - ts_start;
 
 }
 

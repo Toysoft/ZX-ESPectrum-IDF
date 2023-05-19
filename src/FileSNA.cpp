@@ -124,7 +124,7 @@ bool FileSNA::load(string sna_fn)
     file = fopen(sna_fn.c_str(), "rb");
     if (file==NULL)
     {
-        printf("FileSNA: Error opening %s",sna_fn.c_str());
+        printf("FileSNA: Error opening %s\n",sna_fn.c_str());
 
         // Resume audio
         pwm_audio_start();
@@ -244,6 +244,14 @@ bool FileSNA::load(string sna_fn)
         if (snapshotArch == "48K") {
             #ifdef SNAPSHOT_LOAD_FORCE_ARCH
                 Config::requestMachine("48K", "SINCLAIR", true);
+
+                // Condition this to 50hz mode
+                if(Config::videomode) {
+                    Config::ram_file = sna_fn;
+                    Config::save();
+                    OSD::esp_hard_reset(); 
+                }                           
+
                 MemESP::romInUse = 0;
             #else
                 MemESP::romInUse = 1;
@@ -253,6 +261,14 @@ bool FileSNA::load(string sna_fn)
     else if (Config::getArch() == "48K") {
         if (snapshotArch == "128K") {
             Config::requestMachine("128K", "SINCLAIR", true);
+
+            // Condition this to 50hz mode
+            if(Config::videomode) {
+                Config::ram_file = sna_fn;
+                Config::save();
+                OSD::esp_hard_reset();                            
+            }
+
             MemESP::romInUse = 1;
         }
     }

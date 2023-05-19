@@ -58,6 +58,25 @@ int VIDEO::tStatesScreen;
 uint8_t* VIDEO::grmem;
 uint32_t* VIDEO::SaveRect;
 
+// #ifdef VIDEO_VSYNC
+void IRAM_ATTR VGA6Bit::interrupt(void *arg)
+{
+
+    VGA6Bit * staticthis = (VGA6Bit *)arg;
+
+    if (++staticthis->currentLine == staticthis->totalLines << 1 ) { // Why totalLines << 1 ? Still don't know. Investigate
+
+	    staticthis->currentLine = 0;
+
+        ESPectrum::vsync = true;
+
+        // vTaskNotifyGiveFromISR(ESPectrum::loopTaskHandle, NULL);
+
+    } else ESPectrum::vsync = false;
+
+}
+// #endif
+
 uint8_t (*VIDEO::getFloatBusData)() = &VIDEO::getFloatBusData48;
 
 #ifdef NO_VIDEO
@@ -154,16 +173,34 @@ void precalcborder32()
     }
 }
 
-void VIDEO::Init() {
+const int redPins[] = {RED_PINS_6B};
+const int grePins[] = {GRE_PINS_6B};
+const int bluPins[] = {BLU_PINS_6B};
 
-    const Mode& vgaMode = Config::aspect_16_9 ? vga.MODE360x200 : vga.MODE320x240;
+void VIDEO::vgataskinit(void *unused) {
+
+    const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
     OSD::scrW = vgaMode.hRes;
     OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
-    
-    const int redPins[] = {RED_PINS_6B};
-    const int grePins[] = {GRE_PINS_6B};
-    const int bluPins[] = {BLU_PINS_6B};
+    vga.VGA6Bit_useinterrupt=true;
     vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
+    for (;;){}    
+
+}
+
+TaskHandle_t VIDEO::videoTaskHandle;
+
+void VIDEO::Init() {
+
+    if (Config::videomode > 0) {
+        xTaskCreatePinnedToCore(&VIDEO::vgataskinit, "videoTask", 1536, NULL, /* 5 */ configMAX_PRIORITIES - 2, &videoTaskHandle, 1);
+    } else {
+        const Mode& vgaMode = vga.videomodes[Config::videomode][Config::getArch() == "48K" ? 0 : 1][Config::aspect_16_9 ? 1 : 0];
+        OSD::scrW = vgaMode.hRes;
+        OSD::scrH = vgaMode.vRes / vgaMode.vDiv;
+        vga.VGA6Bit_useinterrupt=false;
+        vga.init(vgaMode, redPins, grePins, bluPins, HSYNC_PIN, VSYNC_PIN);
+    }
 
     precalcColors();    // precalculate colors for current VGA mode
 
@@ -314,7 +351,7 @@ void IRAM_ATTR VIDEO::TopBorder_Blank(unsigned int statestoadd, bool contended) 
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
         Draw = &TopBorder;
-        Draw(0,contended);
+        TopBorder(0,contended);
     }
 
 }
@@ -349,7 +386,7 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
         bmpOffset = offBmp[linedraw_cnt-(is169 ? 4 : 24)];
         attOffset = offAtt[linedraw_cnt-(is169 ? 4 : 24)];
         Draw = MainScreenLB;
-        Draw(0,contended);
+        MainScreenLB(0,contended);
     }
 
 }    
@@ -378,29 +415,29 @@ void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
 
 
 void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
-  
+
     uint8_t att, bmp;
 
     if (contended)
         statestoadd += Z80Ops::is48 ? wait_st[(CPU::tstates + 1) % 224] : wait_st[(CPU::tstates + 3) % 228];
 
     CPU::tstates += statestoadd;
-    
+
     statestoadd += video_rest;
     video_rest = statestoadd & 0x03; // Mod 4
 
     for (int i=0; i < (statestoadd >> 2); i++) {    
 
-            att = grmem[attOffset++];       // get attribute byte
-            bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
-            
-            *lineptr32++ = AluBytes[bmp >> 4][att];
-            *lineptr32++ = AluBytes[bmp & 0xF][att];
+        att = grmem[attOffset++];       // get attribute byte
+        bmp = (att & flashing) ? ~grmem[bmpOffset++] : grmem[bmpOffset++];
 
-        if (++coldraw_cnt > 35) {      
+        *lineptr32++ = AluBytes[bmp >> 4][att];
+        *lineptr32++ = AluBytes[bmp & 0xF][att];
+
+        if (++coldraw_cnt > 35) {
             Draw = MainScreenRB;
             video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
-            Draw(0,false);
+            MainScreenRB(0,false);
             return;
         }
 
