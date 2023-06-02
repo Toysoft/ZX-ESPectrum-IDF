@@ -124,7 +124,8 @@ void OSD::osdAt(uint8_t row, uint8_t col) {
     VIDEO::vga.setCursor(x, y);
 }
 
-void OSD::drawOSD() {
+void OSD::drawOSD(bool bottom_info) {
+    static char bottom_info_str[41];
     unsigned short x = scrAlignCenterX(OSD_W);
     unsigned short y = scrAlignCenterY(OSD_H);
     VIDEO::vga.fillRect(x, y, OSD_W, OSD_H, OSD::zxColor(1, 0));
@@ -135,7 +136,14 @@ void OSD::drawOSD() {
     osdHome();
     VIDEO::vga.print(OSD_TITLE);
     osdAt(21, 0);
-    VIDEO::vga.print(OSD_BOTTOM);
+    if (bottom_info) {
+        switch(Config::videomode) {
+            case 0: snprintf(bottom_info_str,sizeof(bottom_info_str)," Video mode: Standard VGA       v1.0rc1 "); break;
+            case 1: snprintf(bottom_info_str,sizeof(bottom_info_str)," Video mode: VGA 50hz           v1.0rc1 "); break;
+            case 2: snprintf(bottom_info_str,sizeof(bottom_info_str)," Video mode: CRT 50hz           v1.0rc1 "); break;
+        }
+        VIDEO::vga.print(bottom_info_str);
+    } else VIDEO::vga.print(OSD_BOTTOM);
     osdHome();
 }
 
@@ -175,24 +183,30 @@ static bool persistSave(uint8_t slotnumber)
 
 static bool persistLoad(uint8_t slotnumber)
 {
+    
+    OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
+
     char persistfname[sizeof(DISK_PSNA_FILE) + 6];
     sprintf(persistfname,DISK_PSNA_FILE "%u.sna",slotnumber);
     if (!FileSNA::isPersistAvailable(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
         OSD::osdCenteredMsg(OSD_PSNA_NOT_AVAIL, LEVEL_INFO);
         return false;
+    } else {
+        if (!FileSNA::load(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
+            OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
+            return false;
+        } else {
+            Config::ram_file = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname;
+            #ifdef SNAPSHOT_LOAD_LAST
+            Config::save();
+            #endif
+            Config::last_ram_file = Config::ram_file;
+            OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
+        }
     }
-    OSD::osdCenteredMsg(OSD_PSNA_LOADING, LEVEL_INFO);
-    if (!FileSNA::load(FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname)) {
-         OSD::osdCenteredMsg(OSD_PSNA_LOAD_ERR, LEVEL_WARN);
-         return false;
-    }
-    Config::ram_file = FileUtils::MountPoint + DISK_PSNA_DIR + "/" + persistfname;
-    #ifdef SNAPSHOT_LOAD_LAST
-    Config::save();
-    #endif
-    Config::last_ram_file = Config::ram_file;
-    OSD::osdCenteredMsg(OSD_PSNA_LOADED, LEVEL_INFO);
+
     return true;
+
 }
 
 #ifdef ZXKEYB
@@ -285,18 +299,49 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         click();
     }
     else if (KeytoESP == fabgl::VK_F9) { // Volume down
+
+        #ifdef TESTING_CODE
+
+        ESPectrum::target--;
+
+        // // Check if destination file exists
+        // struct stat st;
+        // if (stat("/sd/s/1942.z80", &st) == 0) {
+        //     //printf("Exists!\n");
+        // }
+
+        // FILE *f = fopen("/sd/s/1942.z80", "r");
+        // if (f == NULL) {
+        //     printf("Null file!\n");
+        // } else fclose(f);
+
+        #else
+
         if (ESPectrum::aud_volume>-16) {
                 click();
                 ESPectrum::aud_volume--;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
         }
+
+        #endif
+
     }
     else if (KeytoESP == fabgl::VK_F10) { // Volume up
+
+        #ifdef TESTING_CODE
+        
+        ESPectrum::target++;
+
+        #else
+
         if (ESPectrum::aud_volume<0) {
                 click();                
                 ESPectrum::aud_volume++;
                 pwm_audio_set_volume(ESPectrum::aud_volume);
         }
+
+        #endif
+
     }    
     // else if (KeytoESP == fabgl::VK_F9) {
     //     ESPectrum::ESPoffset -= 5;
@@ -709,7 +754,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }
         else if (opt == 5) {
             // Help
-            drawOSD();
+            drawOSD(true);
             osdAt(2, 0);
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             VIDEO::vga.print(OSD_HELP[Config::lang]);
@@ -770,7 +815,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
         }        
         else if (opt == 6) {
             // About
-            drawOSD();
+            drawOSD(false);
             osdAt(2, 0);
             VIDEO::vga.setTextColor(OSD::zxColor(7, 0), OSD::zxColor(1, 0));
             VIDEO::vga.print(OSD_ABOUT[Config::lang]);
@@ -1112,6 +1157,7 @@ void OSD::changeSnapshot(string filename)
         osdCenteredMsg(MSG_LOADING_Z80 + (string)": " + filename, LEVEL_INFO, 0);
         // printf("Loading Z80: %s\n", filename.c_str());
         FileZ80::load(filename);
+
     }
 
     Config::ram_file = filename;

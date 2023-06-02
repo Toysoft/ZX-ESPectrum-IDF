@@ -87,9 +87,7 @@ public:
     static void (*DrawOSD43)(unsigned int, bool contended);
     static void (*DrawOSD169)(unsigned int, bool contended);
 
-    // #ifdef VIDEO_VSYNC
     static void vgataskinit(void *unused);
-    // #endif
 
     static uint8_t* grmem;
 
@@ -113,6 +111,8 @@ public:
     static uint32_t* SaveRect;
 
     static TaskHandle_t videoTaskHandle;
+
+    static int VsyncFinetune[2];
 
 };
 
