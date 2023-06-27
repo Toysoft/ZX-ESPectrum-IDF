@@ -314,13 +314,18 @@ unsigned short OSD::menuRun(string new_menu) {
     newMenu(new_menu);
 
     #ifdef ZXKEYB
+    if (ZXKeyb::Exists) { // START - ZXKeyb Exists
+        
     zxDelay = REPDEL;
     lastzxKey = 0;
+        
+    } // END - ZXKeyb Exists
     #endif
 
     while (1) {
         
         #ifdef ZXKEYB
+        if (ZXKeyb::Exists) { // START - ZXKeyb Exists
         
         ZXKeyb::process();
 
@@ -405,7 +410,8 @@ unsigned short OSD::menuRun(string new_menu) {
             zxDelay = 0;
             lastzxKey = 0;
         }
-
+        
+        } // END - ZXKeyb Exists
         #endif
        
         // Process external keyboard
@@ -509,8 +515,12 @@ unsigned short OSD::menuRun(string new_menu) {
         }
         vTaskDelay(5 / portTICK_PERIOD_MS);
         
-        #ifdef ZXKEYB        
+        #ifdef ZXKEYB
+        if (ZXKeyb::Exists) { // START - ZXKeyb Exists
+            
         if (zxDelay > 0) zxDelay--;
+            
+        } // END - ZXKeyb Exists
         #endif
 
     }
@@ -667,13 +677,18 @@ string OSD::menuFile(string filedir, string title, string extensions) {
     menuDraw();
 
     #ifdef ZXKEYB
+    if (ZXKeyb::Exists) { // START - ZXKeyb Exists
+        
     zxDelay = REPDEL;
     lastzxKey = 0;
+        
+    } // END - ZXKeyb Exists
     #endif
 
     while (1) {
 
         #ifdef ZXKEYB
+        if (ZXKeyb::Exists) { // START - ZXKeyb Exists
 
         ZXKeyb::process();
 
@@ -758,7 +773,8 @@ string OSD::menuFile(string filedir, string title, string extensions) {
             zxDelay = 0;
             lastzxKey = 0;
         }
-
+        
+        } // END - ZXKeyb Exists
         #endif
         
         // Process external keyboard
@@ -873,8 +889,12 @@ string OSD::menuFile(string filedir, string title, string extensions) {
 
         vTaskDelay(5 / portTICK_PERIOD_MS);    
 
-        #ifdef ZXKEYB        
+        #ifdef ZXKEYB
+        if (ZXKeyb::Exists) { // START - ZXKeyb Exists
+            
         if (zxDelay > 0) zxDelay--;
+            
+        } // END - ZXKeyb Exists
         #endif
 
 

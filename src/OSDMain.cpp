@@ -759,12 +759,17 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             VIDEO::vga.print(OSD_HELP[Config::lang]);
 
             #ifdef ZXKEYB
+            if (ZXKeyb::Exists) { // START - ZXKeyb Exists
+                
             zxDelay = REPDEL;
+                
+            } // END - ZXKeyb Exists
             #endif
 
             while (1) {
 
                 #ifdef ZXKEYB
+                if (ZXKeyb::Exists) { // START - ZXKeyb Exists
         
                 ZXKeyb::process();
 
@@ -790,6 +795,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     }
                 }
 
+                } // END - ZXKeyb Exists
                 #endif
 
                 if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
@@ -801,8 +807,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
                 vTaskDelay(5 / portTICK_PERIOD_MS);
 
-                #ifdef ZXKEYB        
+                #ifdef ZXKEYB
+                if (ZXKeyb::Exists) { // START - ZXKeyb Exists
+                    
                 if (zxDelay > 0) zxDelay--;
+                    
+                } // END - ZXKeyb Exists
                 #endif
 
             }
@@ -820,12 +830,17 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             VIDEO::vga.print(OSD_ABOUT[Config::lang]);
             
             #ifdef ZXKEYB
+            if (ZXKeyb::Exists) { // START - ZXKeyb Exists
+                
             zxDelay = REPDEL;
+                
+            } // END - ZXKeyb Exists
             #endif
             
             while (1) {
 
                 #ifdef ZXKEYB
+                if (ZXKeyb::Exists) { // START - ZXKeyb Exists
         
                 ZXKeyb::process();
 
@@ -851,6 +866,7 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
                     }
                 }
 
+                } // END - ZXKeyb Exists
                 #endif
 
                 if (ESPectrum::PS2Controller.keyboard()->virtualKeyAvailable()) {
@@ -862,8 +878,12 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
                 vTaskDelay(5 / portTICK_PERIOD_MS);
                 
-                #ifdef ZXKEYB        
+                #ifdef ZXKEYB
+                if (ZXKeyb::Exists) { // START - ZXKeyb Exists
+                    
                 if (zxDelay > 0) zxDelay--;
+                    
+                } // END - ZXKeyb Exists
                 #endif
 
 
@@ -875,136 +895,145 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
 
         }
         else if (opt == 7) {
-            menu_level = 2;
-            menu_curopt = 1;
-            menu_saverect = true;
             // Virtual onscreen keyboard
-            uint8_t virtualkey_num = menuRun(MENU_VIRTUAL_KBD[Config::lang]);
-            if (virtualkey_num > 0) {
-                ESPectrum::processKeyboard();
-                if (virtualkey_num == 1) {
-                    KeytoEMU = fabgl::VK_1;
+            menu_saverect = true;
+            menu_curopt = 1;
+            while(1) {
+                if (Config::aspect_16_9) {
+                    menu_level = 0;
+                } else {
+                    menu_level = 1;
                 }
-                if (virtualkey_num == 2) {
-                    KeytoEMU = fabgl::VK_2;
+                
+                uint8_t virtualkey_num = menuRun(MENU_VIRTUAL_KBD[Config::lang]);
+                if (virtualkey_num > 0) {
+                    ESPectrum::processKeyboard();
+                    if (virtualkey_num == 1) {
+                        KeytoEMU = fabgl::VK_1;
+                    }
+                    if (virtualkey_num == 2) {
+                        KeytoEMU = fabgl::VK_2;
+                    }
+                    if (virtualkey_num == 3) {
+                        KeytoEMU = fabgl::VK_3;
+                    }
+                    if (virtualkey_num == 4) {
+                        KeytoEMU = fabgl::VK_4;
+                    }
+                    if (virtualkey_num == 5) {
+                        KeytoEMU = fabgl::VK_5;
+                    }
+                    if (virtualkey_num == 6) {
+                        KeytoEMU = fabgl::VK_6;
+                    }
+                    if (virtualkey_num == 7) {
+                        KeytoEMU = fabgl::VK_7;
+                    }
+                    if (virtualkey_num == 8) {
+                        KeytoEMU = fabgl::VK_8;
+                    }
+                    if (virtualkey_num == 9) {
+                        KeytoEMU = fabgl::VK_9;
+                    }
+                    if (virtualkey_num == 10) {
+                        KeytoEMU = fabgl::VK_0;
+                    }
+                    if (virtualkey_num == 11) {
+                        KeytoEMU = fabgl::VK_a;
+                    }
+                    if (virtualkey_num == 12) {
+                        KeytoEMU = fabgl::VK_b;
+                    }
+                    if (virtualkey_num == 13) {
+                        KeytoEMU = fabgl::VK_c;
+                    }
+                    if (virtualkey_num == 14) {
+                        KeytoEMU = fabgl::VK_d;
+                    }
+                    if (virtualkey_num == 15) {
+                        KeytoEMU = fabgl::VK_e;
+                    }
+                    if (virtualkey_num == 16) {
+                        KeytoEMU = fabgl::VK_f;
+                    }
+                    if (virtualkey_num == 17) {
+                        KeytoEMU = fabgl::VK_g;
+                    }
+                    if (virtualkey_num == 18) {
+                        KeytoEMU = fabgl::VK_h;
+                    }
+                    if (virtualkey_num == 19) {
+                        KeytoEMU = fabgl::VK_i;
+                    }
+                    if (virtualkey_num == 20) {
+                        KeytoEMU = fabgl::VK_j;
+                    }
+                    if (virtualkey_num == 21) {
+                        KeytoEMU = fabgl::VK_k;
+                    }
+                    if (virtualkey_num == 22) {
+                        KeytoEMU = fabgl::VK_l;
+                    }
+                    if (virtualkey_num == 23) {
+                        KeytoEMU = fabgl::VK_m;
+                    }
+                    if (virtualkey_num == 24) {
+                        KeytoEMU = fabgl::VK_n;
+                    }
+                    if (virtualkey_num == 25) {
+                        KeytoEMU = fabgl::VK_o;
+                    }
+                    if (virtualkey_num == 26) {
+                        KeytoEMU = fabgl::VK_p;
+                    }
+                    if (virtualkey_num == 27) {
+                        KeytoEMU = fabgl::VK_q;
+                    }
+                    if (virtualkey_num == 28) {
+                        KeytoEMU = fabgl::VK_r;
+                    }
+                    if (virtualkey_num == 29) {
+                        KeytoEMU = fabgl::VK_s;
+                    }
+                    if (virtualkey_num == 30) {
+                        KeytoEMU = fabgl::VK_t;
+                    }
+                    if (virtualkey_num == 31) {
+                        KeytoEMU = fabgl::VK_u;
+                    }
+                    if (virtualkey_num == 32) {
+                        KeytoEMU = fabgl::VK_v;
+                    }
+                    if (virtualkey_num == 33) {
+                        KeytoEMU = fabgl::VK_w;
+                    }
+                    if (virtualkey_num == 34) {
+                        KeytoEMU = fabgl::VK_x;
+                    }
+                    if (virtualkey_num == 35) {
+                        KeytoEMU = fabgl::VK_y;
+                    }
+                    if (virtualkey_num == 36) {
+                        KeytoEMU = fabgl::VK_z;
+                    }
+                    if (virtualkey_num == 37) {
+                        KeytoEMU = fabgl::VK_RETURN; // ENTER
+                    }
+                    if (virtualkey_num == 38) {
+                        KeytoEMU = fabgl::VK_SPACE;
+                    }
+                    if (virtualkey_num == 39) {
+                        KeytoEMU = fabgl::VK_LSHIFT; // CAPS SHIFT
+                    }
+                    if (virtualkey_num == 40) {
+                        KeytoEMU = fabgl::VK_LCTRL; // SYMBOL SHIFT
+                    }
+                    return;
+                } else {
+                    menu_curopt = 7;
+                    //menu_saverect = true;
+                    break;
                 }
-                if (virtualkey_num == 3) {
-                    KeytoEMU = fabgl::VK_3;
-                }
-                if (virtualkey_num == 4) {
-                    KeytoEMU = fabgl::VK_4;
-                }
-                if (virtualkey_num == 5) {
-                    KeytoEMU = fabgl::VK_5;
-                }
-                if (virtualkey_num == 6) {
-                    KeytoEMU = fabgl::VK_6;
-                }
-                if (virtualkey_num == 7) {
-                    KeytoEMU = fabgl::VK_7;
-                }
-                if (virtualkey_num == 8) {
-                    KeytoEMU = fabgl::VK_8;
-                }
-                if (virtualkey_num == 9) {
-                    KeytoEMU = fabgl::VK_9;
-                }
-                if (virtualkey_num == 10) {
-                    KeytoEMU = fabgl::VK_0;
-                }
-                if (virtualkey_num == 11) {
-                    KeytoEMU = fabgl::VK_a;
-                }
-                if (virtualkey_num == 12) {
-                    KeytoEMU = fabgl::VK_b;
-                }
-                if (virtualkey_num == 13) {
-                    KeytoEMU = fabgl::VK_c;
-                }
-                if (virtualkey_num == 14) {
-                    KeytoEMU = fabgl::VK_d;
-                }
-                if (virtualkey_num == 15) {
-                    KeytoEMU = fabgl::VK_e;
-                }
-                if (virtualkey_num == 16) {
-                    KeytoEMU = fabgl::VK_f;
-                }
-                if (virtualkey_num == 17) {
-                    KeytoEMU = fabgl::VK_g;
-                }
-                if (virtualkey_num == 18) {
-                    KeytoEMU = fabgl::VK_h;
-                }
-                if (virtualkey_num == 19) {
-                    KeytoEMU = fabgl::VK_i;
-                }
-                if (virtualkey_num == 20) {
-                    KeytoEMU = fabgl::VK_j;
-                }
-                if (virtualkey_num == 21) {
-                    KeytoEMU = fabgl::VK_k;
-                }
-                if (virtualkey_num == 22) {
-                    KeytoEMU = fabgl::VK_l;
-                }
-                if (virtualkey_num == 23) {
-                    KeytoEMU = fabgl::VK_m;
-                }
-                if (virtualkey_num == 24) {
-                    KeytoEMU = fabgl::VK_n;
-                }
-                if (virtualkey_num == 25) {
-                    KeytoEMU = fabgl::VK_o;
-                }
-                if (virtualkey_num == 26) {
-                    KeytoEMU = fabgl::VK_p;
-                }
-                if (virtualkey_num == 27) {
-                    KeytoEMU = fabgl::VK_q;
-                }
-                if (virtualkey_num == 28) {
-                    KeytoEMU = fabgl::VK_r;
-                }
-                if (virtualkey_num == 29) {
-                    KeytoEMU = fabgl::VK_s;
-                }
-                if (virtualkey_num == 30) {
-                    KeytoEMU = fabgl::VK_t;
-                }
-                if (virtualkey_num == 31) {
-                    KeytoEMU = fabgl::VK_u;
-                }
-                if (virtualkey_num == 32) {
-                    KeytoEMU = fabgl::VK_v;
-                }
-                if (virtualkey_num == 33) {
-                    KeytoEMU = fabgl::VK_w;
-                }
-                if (virtualkey_num == 34) {
-                    KeytoEMU = fabgl::VK_x;
-                }
-                if (virtualkey_num == 35) {
-                    KeytoEMU = fabgl::VK_y;
-                }
-                if (virtualkey_num == 36) {
-                    KeytoEMU = fabgl::VK_z;
-                }
-                if (virtualkey_num == 37) {
-                    KeytoEMU = fabgl::VK_RETURN; // ENTER
-                }
-                if (virtualkey_num == 38) {
-                    KeytoEMU = fabgl::VK_SPACE;
-                }
-                if (virtualkey_num == 39) {
-                    KeytoEMU = fabgl::VK_LSHIFT; // CAPS SHIFT
-                }
-                if (virtualkey_num == 40) {
-                    KeytoEMU = fabgl::VK_LCTRL; // SYMBOL SHIFT
-                }
-                break;
-            } else {
-                menu_curopt = 7;
             }
         }
         else break;

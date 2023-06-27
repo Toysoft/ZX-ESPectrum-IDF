@@ -51,6 +51,8 @@ public:
     static uint8_t ZXcols[8];
     
     static uint8_t PrevFkeyOSD;
+    
+    static bool Exists;
 
 private:
     static void putRows(uint8_t row_pattern);
