@@ -106,11 +106,6 @@ using namespace std;
 
 // ///////////////////////////////////////////////////////////////////////////////
 
-// using internal storage (spi flash)
-#include "esp_spiffs.h"
-
-// ///////////////////////////////////////////////////////////////////////////////
-
 bool FileSNA::load(string sna_fn)
 {
     FILE *file;
@@ -296,6 +291,8 @@ bool FileSNA::load(string sna_fn)
         ESPectrum::AY_emu = Config::AY48;
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_48;
 
+        CPU::IntLenght = 32 + CPU::latetiming;                
+
     } else {
         
         Z80Ops::is48 = false;
@@ -308,6 +305,8 @@ bool FileSNA::load(string sna_fn)
         ESPectrum::samplesPerFrame=ESP_AUDIO_SAMPLES_128;
         ESPectrum::AY_emu = true;        
         ESPectrum::Audio_freq = ESP_AUDIO_FREQ_128;
+
+        CPU::IntLenght = 36 + CPU::latetiming;
 
     }
 

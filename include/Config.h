@@ -67,6 +67,7 @@ public:
     // config persistence
     static void load();
     static void save();
+    static void save(string value);
 
     // // list of snapshot file names
     // static string   sna_file_list;

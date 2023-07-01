@@ -393,9 +393,9 @@ public:
     static void IRAM_ATTR execute();
 
     // Check INT
-    static void checkINT(void);
+    static void IRAM_ATTR checkINT(void);
 
-    static void incRegR(uint8_t inc);
+    static void IRAM_ATTR incRegR(uint8_t inc);
 
 #ifdef WITH_BREAKPOINT_SUPPORT
     static bool isBreakpoint(void) { return breakpointEnabled; }
@@ -499,6 +499,7 @@ private:
 
     // INI
     static void IRAM_ATTR ini(void);
+    // static uint8_t IRAM_ATTR ini(void);    
 
     // IND
     static void IRAM_ATTR ind(void);
@@ -508,6 +509,8 @@ private:
 
     // OUTD
     static void IRAM_ATTR outd(void);
+
+    static void SetAbortedINxR_OTxRFlags();
 
     // BIT n,r
     static inline void bitTest(uint8_t mask, uint8_t reg);

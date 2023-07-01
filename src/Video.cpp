@@ -418,8 +418,8 @@ void IRAM_ATTR VIDEO::TopBorder(unsigned int statestoadd, bool contended) {
     for (int i=0; i < (statestoadd >> 2); i++) {
         *lineptr32++ = brd;
         *lineptr32++ = brd;
-        if (++coldraw_cnt == 40) {
-            Draw = ++linedraw_cnt == (is169 ? 4 : 24) ? &MainScreen_Blank : &TopBorder_Blank;
+        if (++coldraw_cnt == 40 + 4) {
+            Draw = ++linedraw_cnt == (is169 ? 4 : 24 + 12) ? &MainScreen_Blank : &TopBorder_Blank;
             return;
         }
     }
@@ -436,8 +436,8 @@ void IRAM_ATTR VIDEO::MainScreen_Blank(unsigned int statestoadd, bool contended)
         lineptr32 = (uint32_t *)(vga.frameBuffers[0][linedraw_cnt]);
         if (is169) lineptr32 += 5;
         coldraw_cnt = 0;
-        bmpOffset = offBmp[linedraw_cnt-(is169 ? 4 : 24)];
-        attOffset = offAtt[linedraw_cnt-(is169 ? 4 : 24)];
+        bmpOffset = offBmp[linedraw_cnt-(is169 ? 4 : 24 + 12)];
+        attOffset = offAtt[linedraw_cnt-(is169 ? 4 : 24 + 12)];
         Draw = MainScreenLB;
         MainScreenLB(0,contended);
     }
@@ -456,7 +456,7 @@ void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
     for (int i=0; i < (statestoadd >> 2); i++) {    
         *lineptr32++ = brd;
         *lineptr32++ = brd;
-        if (++coldraw_cnt > 3) {      
+        if (++coldraw_cnt > 3 + 2) {      
             Draw = DrawOSD169;
             video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
             Draw(0,false);
@@ -465,7 +465,6 @@ void IRAM_ATTR VIDEO::MainScreenLB(unsigned int statestoadd, bool contended) {
     }
     
 }
-
 
 void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
 
@@ -487,7 +486,7 @@ void IRAM_ATTR VIDEO::MainScreen(unsigned int statestoadd, bool contended) {
         *lineptr32++ = AluBytes[bmp >> 4][att];
         *lineptr32++ = AluBytes[bmp & 0xF][att];
 
-        if (++coldraw_cnt > 35) {
+        if (++coldraw_cnt > 35 + 2) {
             Draw = MainScreenRB;
             video_rest += ((statestoadd >> 2) - (i + 1))  << 2;
             MainScreenRB(0,false);
@@ -532,7 +531,7 @@ void IRAM_ATTR VIDEO::MainScreen_OSD(unsigned int statestoadd, bool contended) {
             *lineptr32++ = brd;
         }
 
-        if (++coldraw_cnt == 40) {
+        if (++coldraw_cnt == 40 + 4) {
             Draw = ++linedraw_cnt == 196 ? &BottomBorder_Blank : &MainScreen_Blank;
             return;
         }
@@ -554,8 +553,8 @@ void IRAM_ATTR VIDEO::MainScreenRB(unsigned int statestoadd, bool contended) {
         *lineptr32++ = brd;
         *lineptr32++ = brd;
 
-        if (++coldraw_cnt == 40) {
-            Draw = ++linedraw_cnt == (is169 ? 196 : 216) ? &BottomBorder_Blank : &MainScreen_Blank;
+        if (++coldraw_cnt == 40 + 4) {
+            Draw = ++linedraw_cnt == (is169 ? 196 : 216 + 12) ? &BottomBorder_Blank : &MainScreen_Blank;
             return;
         }
 
@@ -590,8 +589,8 @@ void IRAM_ATTR VIDEO::BottomBorder(unsigned int statestoadd, bool contended) {
 
         *lineptr32++ = brd;
         *lineptr32++ = brd;
-        if (++coldraw_cnt == 40) {
-            Draw = ++linedraw_cnt == (is169 ? 200 : 240) ? &Blank : &BottomBorder_Blank ;
+        if (++coldraw_cnt == 40 + 4) {
+            Draw = ++linedraw_cnt == (is169 ? 200 : 240 + 24) ? &Blank : &BottomBorder_Blank ;
             return;
         }
     }
@@ -616,8 +615,8 @@ void IRAM_ATTR VIDEO::BottomBorder_OSD(unsigned int statestoadd, bool contended)
             } else lineptr32+=2;
         }
         
-        if (++coldraw_cnt == 40) {
-            Draw = ++linedraw_cnt == 240 ? &Blank : &BottomBorder_Blank ;
+        if (++coldraw_cnt == 40 + 4) {
+            Draw = ++linedraw_cnt == 240 + 24 ? &Blank : &BottomBorder_Blank ;
             return;
         }
     }

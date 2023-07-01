@@ -63,6 +63,8 @@ uint32_t CPU::tstates = 0;
 uint64_t CPU::global_tstates = 0;
 uint32_t CPU::statesInFrame = 0;
 uint32_t CPU::framecnt = 0;
+uint8_t CPU::latetiming = 0;
+uint8_t CPU::IntLenght = 0;
 
 bool Z80Ops::is48 = true;
 
@@ -78,9 +80,11 @@ void CPU::setup()
     if (Config::getArch() == "48K") {
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
         Z80Ops::is48 = true;
+        CPU::IntLenght = 32 + CPU::latetiming;
     } else {
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
         Z80Ops::is48 = false;
+        CPU::IntLenght = 36 + CPU::latetiming;
     }
 
     tstates = 0;
@@ -99,9 +103,11 @@ void CPU::reset() {
     if (Config::getArch() == "48K") {
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData48;
         Z80Ops::is48 = true;
+        CPU::IntLenght = 32 + CPU::latetiming;
     } else {
         VIDEO::getFloatBusData = &VIDEO::getFloatBusData128;
         Z80Ops::is48 = false;
+        CPU::IntLenght = 36 + CPU::latetiming;
     }
 
     tstates = 0;
@@ -262,8 +268,20 @@ void IRAM_ATTR Z80Ops::addressOnBus(uint16_t address, int32_t wstates){
 /* Callback to know when the INT signal is active */
 bool IRAM_ATTR Z80Ops::isActiveINT(void) {
 
-    int tmp = CPU::tstates;
+
+    // // Early timing
+    // int tmp = CPU::tstates;
+    // if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
+    // return ((tmp >= 0) && (tmp < (is48 ? 32 : 36)));
+
+    // // Late timing
+    // int tmp = CPU::tstates + 1;
+    // if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
+    // return ((tmp >= 0) && (tmp <= (is48 ? 32 : 36)));
+
+    int tmp = CPU::tstates + CPU::latetiming;
     if (tmp >= CPU::statesInFrame) tmp -= CPU::statesInFrame;
-    return ((tmp >= 0) && (tmp < (is48 ? 32 : 36)));
+    // return ((tmp >= 0) && (tmp < (is48 ? 32 + CPU::latetiming: 36 + CPU::latetiming)));
+    return ((tmp >= 0) && (tmp < CPU::IntLenght));    
 
 }

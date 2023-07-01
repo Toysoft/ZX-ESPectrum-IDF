@@ -73,6 +73,12 @@ public:
     // Frames elapsed
     static uint32_t framecnt;
 
+    // Late timing
+    static uint8_t latetiming;
+
+    // INT signal lenght
+    static uint8_t IntLenght;
+
 };
 
 static const unsigned char wait_st[228] = { 
