@@ -41,6 +41,7 @@ visit https://zxespectrum.speccy.org/contacto
 #define MSG_LOADING_Z80 "Loading Z80 file"
 #define MSG_SAVE_CONFIG "Saving config file"
 #define MSG_VGA_INIT "Initializing VGA"
+#define EMU_VERSION "  v1.0rc2pr "
 
 // Error
 #define ERROR_TITLE "  !!!   ERROR - CLIVE MEDITATION   !!!  "
@@ -54,7 +55,7 @@ visit https://zxespectrum.speccy.org/contacto
 // OSD
 #define OSD_TITLE  " ESPectrum - The ESP32 powered emulator "
 // #define OSD_BOTTOM " SCIENCE LEADS TO PROGRESS      v1.0rc1 "
-#define OSD_BOTTOM " zxespectrum.speccy.org         v1.0rc1 "
+#define OSD_BOTTOM " zxespectrum.speccy.org     " EMU_VERSION
 
 #define OSD_PAUSE_EN " --=[PAUSED]=-- "
 #define OSD_PAUSE_ES "--=[EN PAUSA]=--"
@@ -69,6 +70,7 @@ static const char *OSD_PAUSE[2] = { OSD_PAUSE_EN,OSD_PAUSE_ES };
 #define OSD_PSNA_LOAD_ERR "ERROR Loading Persist Snapshot"
 #define OSD_PSNA_SAVED  "  Persist Snapshot Saved  "
 #define OSD_TAPE_LOAD_ERR "ERROR Loading TAP file"
+#define OSD_TAPE_SAVE_ERR "ERROR Saving TAP file"
 
 #define OSD_TAPE_SELECT_ERR_EN "No TAP selected"
 #define OSD_TAPE_SELECT_ERR_ES "TAP no seleccionado"
@@ -96,14 +98,14 @@ static const char *MENU_SNA[2] = { MENU_SNA_EN,MENU_SNA_ES };
 
 #define MENU_TAPE_EN \
     "Tape menu\n"\
-    "Select TAP  \t[F5] >\n"\
-    "Play/Pause  \t[F6]  \n"\
-    "Stop  \t[F7]  \n"
+    "Select TAP   \t[F5] >\n"\
+    "Play/Stop    \t[F6]  \n"\
+    "Tape browser \t[F7]  \n"
 #define MENU_TAPE_ES \
     "Casete\n"\
-    "Elegir TAP  \t[F5] >\n"\
-    "Play/Pausa  \t[F6]  \n"\
-    "Stop  \t[F7]  \n"
+    "Elegir TAP      \t[F5] >\n"\
+    "Play/Stop       \t[F6]  \n"\
+    "Navegador cinta \t[F7]  \n"
 static const char *MENU_TAPE[2] = { MENU_TAPE_EN,MENU_TAPE_ES };
 
 #define MENU_MAIN_EN /*"Main Menu\n"*/ \
@@ -198,20 +200,46 @@ static const char *MENU_PERSIST_SAVE[2] = { MENU_PERSIST_SAVE_EN, MENU_PERSIST_S
     "Cargar snapshot\n" MENU_PERSIST_ES
 static const char *MENU_PERSIST_LOAD[2] = { MENU_PERSIST_LOAD_EN, MENU_PERSIST_LOAD_ES };
 
+// #define MENU_STORAGE_EN "Storage\n"\
+//     "Internal\t[I]\n"\
+//     "SD Card\t[S]\n"\
+//     "Refresh directories\n"
+// #define MENU_STORAGE_ES "Almacenamiento\n"\
+//     "Interno\t[I]\n"\
+//     "Tarjeta SD\t[S]\n"\
+//     "Refrescar directorios\n"
+// static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
+
+// #define MENU_STORAGE_EN "Storage\n"\
+//     "Refresh directories\n"
+// #define MENU_STORAGE_ES "Almacenamiento\n"\
+//     "Refrescar directorios\n"
+// static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
+
 #define MENU_STORAGE_EN "Storage\n"\
-    "Internal\t[I]\n"\
-    "SD Card\t[S]\n"\
+    "Flash tape load\t>\n"\
     "Refresh directories\n"
 #define MENU_STORAGE_ES "Almacenamiento\n"\
-    "Interno\t[I]\n"\
-    "Tarjeta SD\t[S]\n"\
+    "Carga rapida cinta\t>\n"\
     "Refrescar directorios\n"
-static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
+// static const char *MENU_STORAGE[2] = { MENU_STORAGE_EN, MENU_STORAGE_ES };
+
+#define MENU_FLASHLOAD_EN "Flash load\n"\
+    "Yes\t[Y]\n"\
+    "No\t[N]\n"
+#define MENU_FLASHLOAD_ES "Carga rapida\n"\
+    "Si\t[Y]\n"\
+    "No\t[N]\n"
+// static const char *MENU_FLASHLOAD[2] = { MENU_FLASHLOAD_EN, MENU_FLASHLOAD_ES };
 
 #define MENU_OTHER_EN "Other\n"\
-    "AY on 48K\t>\n"
+    "AY on 48K\t>\n"\
+    "ALU Timing\t>\n"\
+    "48K Issue 2\t>\n"
 #define MENU_OTHER_ES "Otros\n"\
-    "AY en 48K\t>\n"
+    "AY en 48K\t>\n"\
+    "Timing ULA\t>\n"\
+    "48K Issue 2\t>\n"
 static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
 
 #define MENU_AY48_EN "AY on 48K\n"\
@@ -221,6 +249,22 @@ static const char *MENU_OTHER[2] = { MENU_OTHER_EN, MENU_OTHER_ES };
     "Si\t[Y]\n"\
     "No\t[N]\n"
 static const char *MENU_AY48[2] = { MENU_AY48_EN, MENU_AY48_ES };
+
+#define MENU_ALUTIMING_EN "ALU Timing\n"\
+    "Early\t[E]\n"\
+    "Late\t[L]\n"
+#define MENU_ALUTIMING_ES "Timing ULA\n"\
+    "Early\t[E]\n"\
+    "Late\t[L]\n"
+static const char *MENU_ALUTIMING[2] = { MENU_ALUTIMING_EN, MENU_ALUTIMING_ES };
+
+#define MENU_ISSUE2_EN "48K Issue 2\n"\
+    "Yes\t[Y]\n"\
+    "No\t[N]\n"
+#define MENU_ISSUE2_ES "48K Issue 2\n"\
+    "Si\t[Y]\n"\
+    "No\t[N]\n"
+static const char *MENU_ISSUE2[2] = { MENU_ISSUE2_EN, MENU_ISSUE2_ES };
 
 #define MENU_ARCH_EN "Select machine\n"\
     "ZX Spectrum 48K\n"\
@@ -300,8 +344,8 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
     " PS2 driver by Fabrizio di Vittorio\n"\
     "\n"\
     " Greetings to Ackerman, zx81, azesmbog,\n"\
-    " Rampa, D. Carrion, A. Villena and\n"\
-    " to Retrowiki and his people\n"\
+    " ZjoyKiLer, D. Carrion, A. Villena,\n"\
+    " Rampa and to Retrowiki and his people\n"\
     " for the support and inspiration.\n"    
 #define OSD_ABOUT_ES \
     " (C)2023 Victor Iborra \"Eremus\"\n"\
@@ -319,10 +363,11 @@ static const char *MENU_JOY[2] = { MENU_JOY_EN, MENU_JOY_ES };
     " Driver PS2 por Fabrizio di Vittorio\n"\
     "\n"\
     " Saludos a Ackerman, zx81, azesmbog,\n"\
-    " Rampa, D. Carrion, A. Villena y\n"\
-    " a Retrowiki y su gente por su\n"\
+    " ZjoyKiLer, D. Carrion, A. Villena,\n"\
+    " Rampa y a Retrowiki y su gente por su\n"\
     " ayuda e inspiracion.\n"
-static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
+
+// static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
 
 #define OSD_HELP_EN \
     " [F1]     Menu\n"\
@@ -330,15 +375,15 @@ static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
     " [F3]     Load custom snapshot\n"\
     " [F4]     Save custom snapshot\n"\
     " [F5]     Select TAP file\n"\
-    " [F6]     Play/Pause tape\n"\
-    " [F7]     Stop tape\n"\
+    " [F6]     Play/Stop tape\n"\
+    " [F7]     Tape browser\n"\
     " [F8]     OSD Stats:\n"\
     "           CPU: microsec. per CPU cycle\n"\
     "           IDL: unused microsec.\n"\
     "           FPS: Frames per second\n"\
     "           FND: FPS without delay\n"\
-    " [F9]     Volume down\n"\
-    " [F10]    Volume up\n"\
+    " [F9-F10] Volume down-up\n"\
+    " [F11]    Hard reset\n"\
     " [F12]    Reset ESP32\n"\
     " [Pause]  Pause\n"\
     " [PrtScr] BMP screenshot (SD folder /c)\n"
@@ -348,19 +393,22 @@ static const char *OSD_ABOUT[2] = { OSD_ABOUT_EN, OSD_ABOUT_ES };
     " [F3]      Cargar snapshot\n"\
     " [F4]      Guardar snapshot\n"\
     " [F5]      Elegir TAP\n"\
-    " [F6]      Play/Pausa\n"\
-    " [F7]      Stop\n"\
+    " [F6]      Play/Stop cinta\n"\
+    " [F7]      Explorador cinta\n"\
     " [F8]      OSD\n"\
     "            CPU: microsg. por ciclo CPU\n"\
     "            IDL: microsg. sin usar\n"\
     "            FPS: Frames por segundo\n"\
     "            FND: FPS sin delay\n"\
-    " [F9]      Subir volumen\n"\
-    " [F10]     Bajar volumen\n"\
+    " [F9-F10]  Bajar-Subir volumen\n"\
+    " [F11]     Reset completo\n"\
     " [F12]     Resetear ESP32\n"\
     " [Pause]   Pausa\n"\
     " [ImpPant] Captura BMP (Carpeta SD /c)\n"
-static const char *OSD_HELP[2] = { OSD_HELP_EN, OSD_HELP_ES };
+
+// static const char *OSD_HELP[2] = { OSD_HELP_EN, OSD_HELP_ES };
+
+static const char *OSD_TAPE_OF[2] = { "of", "de" };
 
 #define MENU_VIRTUAL_KBD_EN "Select key\n"\
     "1\n"\
