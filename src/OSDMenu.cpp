@@ -54,7 +54,7 @@ using namespace std;
 #include "Z80_JLS/z80.h"
 #include "Tape.h"
 
-#define MENU_MAX_ROWS 15 ///////
+#define MENU_MAX_ROWS 15 // Was 18 but 15 allows virtual onscreen keyboard OSD work when Config::aspect_16_9  ///////
 // Line type
 #define IS_TITLE 0
 #define IS_FOCUSED 1
@@ -189,8 +189,8 @@ void OSD::menuPrintRow(uint8_t virtual_row_num, uint8_t line_type) {
     
     uint8_t margin;
 
-    string line = rowGet(menu, menuRealRowFor(virtual_row_num));
-    // string line = rowGet(menu, virtual_row_num); ///////
+    string line = rowGet(menu, menuRealRowFor(virtual_row_num)); // This line allows proper working for menus which needs scroll like virtual onscreen keyboard
+    // string line = rowGet(menu, virtual_row_num);  ///////
 
     // printf("%s\n",line.c_str());
     

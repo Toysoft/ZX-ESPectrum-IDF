@@ -263,7 +263,7 @@ std::string ESPectrum::bootKeyboard() {
             if ((PS2Controller.keyboard()->isVKDown(fabgl::VK_q) && PS2Controller.keyboard()->isVKDown(fabgl::VK_3))) return "3Q";
             if ((PS2Controller.keyboard()->isVKDown(fabgl::VK_w) && PS2Controller.keyboard()->isVKDown(fabgl::VK_3))) return "3W";
  
-            /*
+            /* ///////
             // Check keyboard status
             if (PS2Controller.keyboard()->isVKDown(fabgl::VK_1)) kbdstr += "1";
             if (PS2Controller.keyboard()->isVKDown(fabgl::VK_2)) kbdstr += "2";
@@ -827,7 +827,7 @@ void IRAM_ATTR ESPectrum::processKeyboard() {
             // Process physical keyboard
             ZXKeyb::process();
         
-        // Add extra key combination to show the OSD menu
+        // Add extra key combination to show the OSD menu ///////
         if ((!bitRead(ZXKeyb::ZXcols[7],1)) && (!bitRead(ZXKeyb::ZXcols[6],0))) { ///////
             zxDelay = 15;
             OSD::do_OSD(fabgl::VK_F1);

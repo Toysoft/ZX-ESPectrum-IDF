@@ -1139,8 +1139,8 @@ void OSD::do_OSD(fabgl::VirtualKey KeytoESP) {
             return;            
 
         }
-        else if (opt == 7) {
-            // Virtual onscreen keyboard ///////
+        else if (opt == 7) {  ///////
+            // Virtual onscreen keyboard  ///////
             menu_saverect = true;
             menu_curopt = 1;
             while(1) {
