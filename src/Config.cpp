@@ -50,22 +50,24 @@ visit https://zxespectrum.speccy.org/contacto
 #include "messages.h"
 #include "ESPectrum.h"
 #include "pwm_audio.h"
+#include "roms.h"
 
+const string Config::archnames[3] = { "48K", "128K", "Pentagon"};
 string   Config::arch = "48K";
 string   Config::ram_file = NO_RAM_FILE;
 string   Config::last_ram_file = NO_RAM_FILE;
 string   Config::romSet = "SINCLAIR";
 bool     Config::slog_on = false;
-bool     Config::aspect_16_9 = true;
+bool     Config::aspect_16_9 = false;
 uint8_t  Config::videomode = 0; // 0 -> SAFE VGA, 1 -> 50HZ VGA, 2 -> 50HZ CRT
 uint8_t  Config::esp32rev = 0;
-// string   Config::kbd_layout = "US";
 uint8_t  Config::lang = 0;
 bool     Config::AY48 = false;
 bool     Config::Issue2 = true;
 bool     Config::flashload = true;
-uint8_t  Config::joystick = 0; // 0 -> Cursor, 1 -> Kempston
+uint8_t  Config::joystick = 1; // 0 -> Cursor, 1 -> Kempston
 uint8_t  Config::AluTiming = 0;
+uint8_t  Config::ps2_dev2 = 0; // Second port (Lilygo / Olimex) PS/2 device: 0 -> None, 1 -> PS/2 keyboard, 2 -> PS/2 Mouse (TO DO)
 
 // erase control characters (in place)
 static inline void erase_cntrl(std::string &s) {
@@ -98,7 +100,7 @@ static inline void trim(std::string &s) {
 // Read config from FS
 void Config::load() {
 
-    pwm_audio_stop();
+    // pwm_audio_stop();
 
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
@@ -138,7 +140,7 @@ void Config::load() {
             // No nvs data found. Save it
             nvs_close(handle);
             Config::save();
-            pwm_audio_start();
+            // pwm_audio_start();
             return;
         }
 
@@ -167,6 +169,9 @@ void Config::load() {
             printf("slog:%s\n",str_data);
             slog_on = strcmp(str_data, "false");            
             free(str_data);
+
+            // slog_on = true; // Force for testing
+
         }
 
         err = nvs_get_str(handle, "sdstorage", NULL, &required_size);
@@ -174,11 +179,6 @@ void Config::load() {
             str_data = (char *)malloc(required_size);
             nvs_get_str(handle, "sdstorage", str_data, &required_size);
             printf("sdstorage:%s\n",str_data);
-
-            // if (FileUtils::SDReady) {
-            //     FileUtils::MountPoint = ( strcmp(str_data, "false") ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
-            // } else
-            //     FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
 
             // Force SD from now on
             FileUtils::MountPoint = MOUNT_POINT_SD;
@@ -243,84 +243,16 @@ void Config::load() {
             printf("AluTiming:%u\n",Config::AluTiming);
         }
 
+        err = nvs_get_u8(handle, "PS2Dev2", &Config::ps2_dev2);
+        if (err == ESP_OK) {
+            printf("PS2Dev2:%u\n",Config::ps2_dev2);
+        }
+
         // Close
         nvs_close(handle);
     }
 
-    // FILE *f = fopen(DISK_BOOT_FILENAME, "r");
-    // if (f==NULL)
-    // {
-    //     // printf("Error opening %s",DISK_BOOT_FILENAME);
-    //     Config::save(); // Try to create file if doesn't exist
-    //     return;
-    // }
-
-    // char buf[256];
-    // while(fgets(buf, sizeof(buf), f) != NULL)
-    // {
-    //     string line = buf;
-    //     printf(line.c_str());
-        // if (line.find("ram:") != string::npos) {
-        //     ram_file = line.substr(line.find(':') + 1);
-        //     erase_cntrl(ram_file);
-        //     trim(ram_file);
-        // } else if (line.find("arch:") != string::npos) {
-        //     arch = line.substr(line.find(':') + 1);
-        //     erase_cntrl(arch);
-        //     trim(arch);
-        // } else if (line.find("romset:") != string::npos) {
-        //     romSet = line.substr(line.find(':') + 1);
-        //     erase_cntrl(romSet);
-        //     trim(romSet);
-        // } else if (line.find("slog:") != string::npos) {
-        //     line = line.substr(line.find(':') + 1);
-        //     erase_cntrl(line);
-        //     trim(line);
-        //     slog_on = (line == "true" ? true : false);
-        // } else if (line.find("asp169:") != string::npos) {
-        //     line = line.substr(line.find(':') + 1);
-        //     erase_cntrl(line);
-        //     trim(line);
-        //     aspect_16_9 = (line == "true");
-        // } else if (line.find("sdstorage:") != string::npos) {
-        //     if (FileUtils::SDReady) {
-        //         line = line.substr(line.find(':') + 1);
-        //         erase_cntrl(line);
-        //         trim(line);
-        //         FileUtils::MountPoint = (line == "true" ? MOUNT_POINT_SD : MOUNT_POINT_SPIFFS);
-        //     } else
-        //         FileUtils::MountPoint = MOUNT_POINT_SPIFFS;
-        // } else if (line.find("kbdlayout:") != string::npos) {
-        //     kbd_layout = line.substr(line.find(':') + 1);
-        //     erase_cntrl(kbd_layout);
-        //     trim(kbd_layout);
-        // } else if (line.find("videomode:") != string::npos) {
-        //     string svmode = line.substr(line.find(':') + 1);
-        //     erase_cntrl(svmode);
-        //     trim(svmode);
-        //     Config::videomode = stoi(svmode);
-        // } else if (line.find("language:") != string::npos) {
-        //     string slang = line.substr(line.find(':') + 1);
-        //     erase_cntrl(slang);
-        //     trim(slang);
-        //     Config::lang = stoi(slang);
-        // } else if (line.find("AY48:") != string::npos) {
-        //     line = line.substr(line.find(':') + 1);
-        //     erase_cntrl(line);
-        //     trim(line);
-        //     AY48 = (line == "true");
-        // } else if (line.find("joystick:") != string::npos) {
-        //     string sjoy = line.substr(line.find(':') + 1);
-        //     erase_cntrl(sjoy);
-        //     trim(sjoy);
-        //     Config::joystick = stoi(sjoy);
-        // }
-
-
-    // }
-    // fclose(f);
-
-    pwm_audio_start();
+    // pwm_audio_start();
 
 }
 
@@ -331,7 +263,7 @@ void Config::save() {
 // Dump actual config to FS
 void Config::save(string value) {
 
-    pwm_audio_stop();
+    // pwm_audio_stop();
 
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
@@ -364,8 +296,7 @@ void Config::save(string value) {
             nvs_set_str(handle,"ram",ram_file.c_str());   
 
         if((value=="slog") || (value=="all"))
-            // nvs_set_str(handle,"slog",slog_on ? "true" : "false");
-            nvs_set_str(handle,"slog","true");            
+            nvs_set_str(handle,"slog",slog_on ? "true" : "false");
 
         if((value=="sdstorage") || (value=="all"))
             nvs_set_str(handle,"sdstorage",FileUtils::MountPoint == MOUNT_POINT_SD ? "true" : "false");
@@ -394,6 +325,9 @@ void Config::save(string value) {
         if((value=="AluTiming") || (value=="all"))
             nvs_set_u8(handle,"AluTiming",Config::AluTiming);
 
+        if((value=="PS2Dev2") || (value=="all"))
+            nvs_set_u8(handle,"PS2Dev2",Config::ps2_dev2);
+
         printf("Committing updates in NVS ... ");
         err = nvs_commit(handle);
         printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
@@ -402,76 +336,35 @@ void Config::save(string value) {
         nvs_close(handle);
     }
 
-    //printf("Saving config file '%s':\n", DISK_BOOT_FILENAME);
-
-    // FILE *f = fopen(DISK_BOOT_FILENAME, "w");
-    // if (f == NULL)
-    // {
-    //     printf("Error opening %s\n",DISK_BOOT_FILENAME);
-    //     pwm_audio_start();
-    //     return;
-    // }
-
-    // // Architecture
-    // //printf(("arch:" + arch + "\n").c_str());
-    // fputs(("arch:" + arch + "\n").c_str(),f);
-
-    // // ROM set
-    // //printf(("romset:" + romSet + "\n").c_str());
-    // fputs(("romset:" + romSet + "\n").c_str(),f);
-
-    // // RAM SNA
-    // //printf(("ram:" + ram_file + "\n").c_str());
-    // fputs(("ram:" + ram_file + "\n").c_str(),f);
-
-    // // Serial logging
-    // //printf(slog_on ? "slog:true\n" : "slog:false\n");
-    // fputs(slog_on ? "slog:true\n" : "slog:false\n",f);
-
-    // // Aspect ratio
-    // //printf(aspect_16_9 ? "asp169:true\n" : "asp169:false\n");
-    // fputs(aspect_16_9 ? "asp169:true\n" : "asp169:false\n",f);
-
-    // // Mount point
-    // //printf(FileUtils::MountPoint == MOUNT_POINT_SD ? "sdstorage:true\n" : "sdstorage:false\n");
-    // fputs(FileUtils::MountPoint == MOUNT_POINT_SD ? "sdstorage:true\n" : "sdstorage:false\n",f);
-
-    // // KBD layout
-    // //printf(("kbdlayout:" + kbd_layout + "\n").c_str());
-    // // fputs(("kbdlayout:" + kbd_layout + "\n").c_str(),f);
-
-    // // Videomode
-    // fputs(("videomode:" + std::to_string(Config::videomode) + "\n").c_str(),f);
-
-    // // Language
-    // //printf("language:%s\n",std::to_string(Config::lang).c_str());
-    // fputs(("language:" + std::to_string(Config::lang) + "\n").c_str(),f);
-
-    // // AY emulation on 48K mode
-    // fputs(AY48 ? "AY48:true\n" : "AY48:false\n",f);
-
-    // // Joystick
-    // fputs(("joystick:" + std::to_string(Config::joystick) + "\n").c_str(),f);
-
-    // fclose(f);
-    
     printf("Config saved OK\n");
 
-    pwm_audio_start();
+    // pwm_audio_start();
 
 }
 
-void Config::requestMachine(string newArch, string newRomSet, bool force)
+void Config::requestMachine(string newArch, string newRomSet)
 {
-    if (!force && newArch == arch) {
-        // printf("Config::requestMachine(newArch=%s, force=false): unchanged arch, nothing to do\n", newArch.c_str());
-        return;
-    }
 
     arch = newArch;
     romSet = newRomSet;
 
-    ESPectrum::loadRom(arch,romSet);
+    if (arch == "48K") {
+
+        MemESP::rom[0] = (uint8_t *) gb_rom_0_sinclair_48k;
+
+    } else if (arch == "128K") {
+
+        MemESP::rom[0] = (uint8_t *) gb_rom_0_sinclair_128k;
+        MemESP::rom[1] = (uint8_t *) gb_rom_1_sinclair_128k;
+
+    } else if (arch == "Pentagon") {
+
+        MemESP::rom[0] = (uint8_t *) gb_rom_0_pentagon_128k;
+        MemESP::rom[1] = (uint8_t *) gb_rom_1_pentagon_128k;
+
+    }
+
+    MemESP::rom[4] = (uint8_t *) gb_rom_4_trdos;
 
     MemESP::ramCurrent[0] = (unsigned char *)MemESP::rom[MemESP::romInUse];
     MemESP::ramCurrent[1] = (unsigned char *)MemESP::ram[5];
@@ -479,7 +372,7 @@ void Config::requestMachine(string newArch, string newRomSet, bool force)
     MemESP::ramCurrent[3] = (unsigned char *)MemESP::ram[MemESP::bankLatch];
 
     MemESP::ramContended[0] = false;
-    MemESP::ramContended[1] = true;
+    MemESP::ramContended[1] = arch == "Pentagon" ? false : true;
     MemESP::ramContended[2] = false;
     MemESP::ramContended[3] = false;
   

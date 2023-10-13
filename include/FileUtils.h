@@ -58,11 +58,11 @@ public:
     // static void           listAllFiles();
     // static void           sanitizeFilename(String filename); // in-place
     // static File           safeOpenFileRead(String filename);
-    static string getFileEntriesFromDir(string path);
+    // static string getFileEntriesFromDir(string path);
     static int DirToFile(string Dir, string fileExts);
     static void Mergefiles(string fpath, int chunk_cnt);
     // static uint16_t       countFileEntriesFromDir(String path);
-    static string getSortedFileList(string fileDir);
+    // static string getSortedFileList(string fileDir);
     static bool hasSNAextension(string filename);
     static bool hasZ80extension(string filename);
 
@@ -71,9 +71,11 @@ public:
 
     static string SNA_Path; // Current SNA path on the SD (for future folder support)
     static string TAP_Path; // Current TAP path on the SD (for future folder support)    
+    static string DSK_Path; // Current DSK path on the SD (for future folder support)        
 
     static int curSNAFile; // Current SNA file index on browser
     static int curTAPFile; // Current TAP file index on browser
+    static int curDSKFile; // Current DSK file index on browser    
 
 private:
     friend class Config;
@@ -97,11 +99,13 @@ private:
 #define DISK_ROM_DIR "/r"
 #define DISK_SNA_DIR "/s"
 #define DISK_TAP_DIR "/t"
+#define DISK_DSK_DIR "/d"
 #define DISK_SCR_DIR "/c"
 #define DISK_PSNA_DIR "/p"
 #define DISK_PSNA_FILE "persist"
 
 #define NO_RAM_FILE "none"
+
 #define SNA_48K_SIZE 49179
 #define SNA_128K_SIZE1 131103
 #define SNA_128K_SIZE2 147487
